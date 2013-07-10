@@ -1,0 +1,144 @@
+MS_Activated
+version
+action
+motor
+paranoid
+UTF
+XML
+BodyAccess
+critical_score
+errors
+warning_score
+notice_score
+inbound_score
+outbound_score
+max_num_args
+arg_name_length
+arg_length
+total_arg_length
+max_file_size
+combined_file_size
+allowed_http
+allowed_content_type
+allowed_http_version
+restricted_extensions
+restricted_headers
+BT_activated
+protected_urls
+BT_burst_time_slice
+BT_counter_threshold
+BT_block_timeout
+DoS_activated
+DoS_burst_time_slice
+DoS_counter_threshold
+DoS_block_timeout
+Custom
+securitybase
+securityexp
+securityopt 
+securityslr 
+CUSTOM
+securitybase.errors
+securityexp.errors
+securityopt.errors
+securityslr.errors
+CUSTOM.errors
+securitybase.errors
+securityexp.errors
+securityopt.errors
+securityslr.errors
+CUSTOM.errors
+
+
+    auth_server_failure_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    account_locked_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    login_failed_action = models.CharField(max_length=128, blank=1, null=1, choices=RESTRICTED_ACTIONS, default='template')
+    need_change_pass_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    cache_max_file_size = models.IntegerField(default=1000000)
+                     "httpd_custom" : settings.HTTPD_CUSTOM,
+                MS_Activated=True).count()>0
+    is_in_page_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    is_in_url_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    is_in_url_redirect_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    auth_server_failure_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    account_locked_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    login_failed_action = models.CharField(max_length=128, blank=1, null=1, choices=RESTRICTED_ACTIONS, default='template')
+    need_change_pass_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    acl_failed_action = models.CharField(max_length=128, blank=1, null=1, choices=RESTRICTED_ACTIONS, default='template')
+    secondary_authentification_failure_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    version = models.CharField(max_length=128,blank=1, null=1)
+    action = models.CharField(max_length=128, choices=MS_ACTIONS, default='Log_Block')
+    motor = models.CharField(max_length=128, choices=MOTOR, default='Anomaly')
+    paranoid = models.BooleanField()
+    UTF = models.BooleanField()
+    XML = models.BooleanField()
+    BodyAccess = models.BooleanField()
+    critical_score = models.CharField(max_length=128,blank=1, null=1, default=5)
+    warning_score = models.CharField(max_length=128,blank=1, null=1,default=3)
+    notice_score = models.CharField(max_length=128,blank=1, null=1,default=2)
+    inbound_score = models.CharField(max_length=128,blank=1, null=1,default=5)
+    outbound_score = models.CharField(max_length=128,blank=1, null=1,default=4)
+    max_num_args = models.CharField(max_length=128,blank=1, null=1)
+    arg_name_length = models.CharField(max_length=128,blank=1, null=1)
+    arg_length = models.CharField(max_length=128,blank=1, null=1)
+    total_arg_length = models.CharField(max_length=128,blank=1, null=1)
+    max_file_size = models.CharField(max_length=128,blank=1, null=1)
+    combined_file_size = models.CharField(max_length=128,blank=1, null=1)
+    allowed_http = models.TextField(blank=1, null=1,default='GET HEAD POST OPTIONS')
+    allowed_content_type = models.TextField(blank=1, null=1,default='application/x-www-form-urlencoded multipart/form-data text/xml application/xml application/x-amf')
+    allowed_http_version = models.TextField(blank=1, null=1,default='HTTP/1.0 HTTP/1.1')
+    restricted_extensions = models.TextField(blank=1, null=1)
+    restricted_headers = models.TextField(blank=1, null=1)
+    BT_activated = models.BooleanField()
+    protected_urls = models.CharField(max_length=128,blank=1, null=1)
+    BT_burst_time_slice = models.CharField(max_length=128,blank=1, null=1,default=60)
+    BT_counter_threshold = models.CharField(max_length=128,blank=1, null=1,default=100)
+    BT_block_timeout = models.CharField(max_length=128,blank=1, null=1,default=600)
+    DoS_activated = models.BooleanField()
+    DoS_burst_time_slice = models.CharField(max_length=128,blank=1, null=1,default=60)
+    DoS_counter_threshold = models.CharField(max_length=128,blank=1, null=1,default=100)
+    DoS_block_timeout = models.CharField(max_length=128,blank=1, null=1,default=600)
+    Custom = models.TextField(blank=1, null=1)
+    MS_Activated = models.BooleanField()
+    ('CUSTOM', 'CUSTOM'),
+    ('CUSTOM-CONCAT','CUSTOM-CONCAT'),
+    auth_server_failure_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    account_locked_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    login_failed_action = models.CharField(max_length=128, blank=1, null=1, choices=RESTRICTED_ACTIONS, default='template')
+    need_change_pass_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    acl_failed_action = models.CharField(max_length=128, blank=1, null=1, choices=RESTRICTED_ACTIONS, default='template')
+    secondary_authentification_failure_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
+    version = models.CharField(max_length=128,blank=1, null=1)
+    action = models.CharField(max_length=128, choices=MS_ACTIONS, default='Log_Block')
+    motor = models.CharField(max_length=128, choices=MOTOR, default='Anomaly')
+    paranoid = models.BooleanField()
+    UTF = models.BooleanField()
+    XML = models.BooleanField()
+    BodyAccess = models.BooleanField()
+    critical_score = models.CharField(max_length=128,blank=1, null=1, default=5)
+    warning_score = models.CharField(max_length=128,blank=1, null=1,default=3)
+    notice_score = models.CharField(max_length=128,blank=1, null=1,default=2)
+    inbound_score = models.CharField(max_length=128,blank=1, null=1,default=5)
+    outbound_score = models.CharField(max_length=128,blank=1, null=1,default=4)
+    max_num_args = models.CharField(max_length=128,blank=1, null=1)
+    arg_name_length = models.CharField(max_length=128,blank=1, null=1)
+    arg_length = models.CharField(max_length=128,blank=1, null=1)
+    total_arg_length = models.CharField(max_length=128,blank=1, null=1)
+    max_file_size = models.CharField(max_length=128,blank=1, null=1)
+    combined_file_size = models.CharField(max_length=128,blank=1, null=1)
+    allowed_http = models.TextField(blank=1, null=1,default='GET HEAD POST OPTIONS')
+    allowed_content_type = models.TextField(blank=1, null=1,default='application/x-www-form-urlencoded multipart/form-data text/xml application/xml application/x-amf')
+    allowed_http_version = models.TextField(blank=1, null=1,default='HTTP/1.0 HTTP/1.1')
+    restricted_extensions = models.TextField(blank=1, null=1)
+    restricted_headers = models.TextField(blank=1, null=1)
+    BT_activated = models.BooleanField()
+    protected_urls = models.CharField(max_length=128,blank=1, null=1)
+    BT_burst_time_slice = models.CharField(max_length=128,blank=1, null=1,default=60)
+    BT_counter_threshold = models.CharField(max_length=128,blank=1, null=1,default=100)
+    BT_block_timeout = models.CharField(max_length=128,blank=1, null=1,default=600)
+    DoS_activated = models.BooleanField()
+    DoS_burst_time_slice = models.CharField(max_length=128,blank=1, null=1,default=60)
+    DoS_counter_threshold = models.CharField(max_length=128,blank=1, null=1,default=100)
+    DoS_block_timeout = models.CharField(max_length=128,blank=1, null=1,default=600)
+    Custom = models.TextField(blank=1, null=1)
+    MS_Activated = models.BooleanField()
