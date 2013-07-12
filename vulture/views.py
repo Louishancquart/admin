@@ -767,7 +767,7 @@ def edit_policy_files(request, object_id):
         reg=re.compile('^file_(\d+)$')
         ids=[int(m.group(1)) for m in [ reg.match(n) for n in request.POST] if m]
         # big todo
-        #ajouter un delete from fichier politique where politique.id == politique.pk and Fichier.id not in ids |query_set, on met un filter
+        #ajouter un delete from fichier politique where politique.id == politique.pk and Fichier.id not in ids #query_set, on met un filter
         #for policy_pk in ids:
         #    q=FichierPolitique.objects.filter(policy_pk==1).exclude()
 

@@ -102,7 +102,6 @@ class Politique(models.Model):
         return self.name
 
 class FichierPolitique(models.Model):
-    name = models.CharField(max_length = 255)
     politique = models.ForeignKey(Politique)
     fichier = models.ForeignKey(Fichier)
 
