@@ -730,24 +730,12 @@ def export_import_config (request, type):
     
 @login_required    
 def edit_security (request, object_id=None):
-    form = ModSecurityForm(request.POST or None,instance=object_id and ModSecurity.objects.get(id=object_id))
-    print("request is %s"%request.method)
+    form = ModSecurityForm(request.POST or None,instance=object_id and ModSecConf.objects.get(id=object_id))
     if request.method == 'POST':
-        print("entering POST part")
-        path = "%s/security-rules"%(settings.CONF_PATH)
-        custom_p = "%s/CUSTOM"%path
-        if not os.path.exists(custom_p):
-            raise ValueError("path does not exist")
-        name = "modsec-custom-%s.conf"%request.POST["name"]
-        filename = "%s/%s"%(custom_p,name)
-        f = open(filename,"wb")
-        f.write(request.POST["rules"])
-        print("writting to file %s"%request.POST["rules"])
-        f.close()
-        form.save()
-        return HttpResponseRedirect('/security')
-    else:
-        return render_to_response('vulture/modsecurity_form.html', {'form' : form, })
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect('/security')
+    return render_to_response('vulture/modsecurity_form.html', {'form' : form, })
 
 @login_required    
 def edit_group(request, object_id=None):
@@ -766,8 +754,45 @@ def edit_group(request, object_id=None):
             return HttpResponseRedirect('/group/%s/'%groupe.pk)
     else:
         form = GroupSecurityForm(instance=inst )
-    return render_to_response('vulture/modsecurity_list.html', {'form' : form, })
+    return render_to_response('vulture/group_form.html', {'form' : form, })
 
+def view_group(request, object_id):
+    groupe = Groupe.objects.get(pk=object_id);
+    return render_to_response('vulture/group_view.html', {'groupe':groupe})
+
+def edit_policy_files(request, object_id):
+    policy = get_object_or_404(Politique, id=object_id)
+    if request.method=="POST":
+        #regex des files affectes a une policy
+        reg=re.compile('^file_(\d+)$')
+        ids=[int(m.group(1)) for m in [ reg.match(n) for n in request.POST] if m]
+        # big todo
+        #ajouter un delete from fichier politique where politique.id == politique.pk and Fichier.id not in ids |query_set, on met un filter
+        #for policy_pk in ids:
+        #    q=FichierPolitique.objects.filter(policy_pk==1).exclude()
+
+            
+       # i=0
+       # policy_file_list=FichierPolitique.objects.all()
+       # for fichierp in policy:
+       #     if fichierp.pk==ids[i]:
+       #         i+=1
+       #     else:
+       #         fichierp.delete()
+         
+            
+        return HttpResponseRedirect('/policy/%s'%policy.pk)
+    return render_to_response('vulture/policy_file_form.html', {'groups':Groupe.objects.all()})
+
+def edit_policy(request, object_id=None):
+    form = PolicyForm(request.POST or None, instance = object_id != None and Politique.objects.get(pk=object_id) or None)
+    if request.method=="POST":
+        if form.is_valid():
+            policy = form.save()
+            if 'add_button' in request.POST :
+                return HttpResponseRedirect('/policy/%s/files'%policy.pk)
+            return HttpResponseRedirect('/policy/')
+    return render_to_response('vulture/policy_form.html', {'form':form, })
 
 @login_required
 def generator (request):
@@ -775,17 +800,9 @@ def generator (request):
 
 @login_required
 def remove_security(request,object_id=None):
-    security = get_object_or_404(ModSecurity, id=object_id)
+    security = get_object_or_404(ModSecConf, id=object_id)
     if request.method == 'POST':
-        path = "%s/security-rules"%(settings.CONF_PATH)
-        custom_p = "%s/CUSTOM"%path
-        if not os.path.exists(custom_p):
-            raise ValueError("path does not exist")
-        name = security.name+".conf"
-    #   print "deleting %s/%s"%(custom_p,name)
-        os.remove(custom_p+"/"+name)
         security.delete()
-
         return HttpResponseRedirect('/security')
     return render_to_response("vulture/generic_confirm_delete.html",{"object":security,"category":"Web Firewall","name" : "ModSecurity", "url":"/security","user":request.user})
 

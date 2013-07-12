@@ -8,6 +8,10 @@ import os
 import hashlib
 import ifconfig
 
+class PolicyForm(forms.ModelForm):
+    class Meta:
+        model=Politique
+
 class IntfForm(forms.ModelForm):
     def __init__(self,*args,**kwargs):
         super(forms.ModelForm,self).__init__(*args,**kwargs)

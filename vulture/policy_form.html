@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+	{% trans "Web Firewall" %} - <small>{% trans "edit policy" %}</small>
+{% endblock %}
+
+{% block tabs %}
+    <li><a href="/group/">{% trans "List" %}</a></li>
+    <li><a href="#" id="main_tab_1" class="active">{% trans "Main settings" %}</a></li>
+{% endblock %}
+
+{% block content %}
+    <div id="main_content_1" class="main_content">
+    <form id="form" method="post" action="">
+    <table>
+        {{form}}
+        <tr>
+        <th colspan="2"><input type="submit" name="add_button" value="{% trans "Save and select files" %}"/></th>
+        </tr>
+        <tr>
+        <th colspan="2"><input type="submit" name="save_button" value="{% trans "Save settings" %}" /></th>
+        </tr>
+    </table>
+    </form>
+    </div>
+{% endblock %}

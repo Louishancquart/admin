@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+	{% trans "Web Firewall" %} - <small>{% trans "Mod security Groups" %}</small>
+{% endblock %}
+
+{% block tabs %}
+    <li><a href="/group/">{% trans "List" %}</a></li>
+    <li><a href="#" id="main_tab_1" class="active">{% trans "Add Group" %}</a></li>
+{% endblock %}
+
+{% block content %}
+    <div id="main_content_1" class="main_content">
+        <form method="post" enctype="multipart/form-data" action="">
+        <table>
+        {{ form }}
+            {% comment %}
+            <tr>
+                <th>{% trans "File" %}</th>
+                <th>{{ form.path }}{% if form.path.errors %}<div class="error" style="background-color:red;">{{ form.path.errors|join:", " }}</div>{% endif %}</th>
+            </tr>
+            <tr>
+                <th>url</th>
+                <th>{{ form.url }}{% if form.url.errors %}<div class="error" style="background-color:red;">{{ form.url.errors|join:", " }}</div>{% endif %}</th>
+            </tr>
+            
+           {% endcomment %}
+            <tr>
+                <th></th><td><input type="submit" value="Enregistrer" href="." style="text-align: center;"/></td>  
+            </tr>
+        </table>
+    </form>
+    </div>
+{% endblock %}
+

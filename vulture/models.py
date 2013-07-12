@@ -41,11 +41,9 @@ import shutil
 
 
 class Groupe(models.Model):
-    #url  = models.URLField(max_length=255, blank=True, null=True)# default="https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/master")
-    #path = models.FileField(upload_to="rules_dir", null=True, blank=True)
-    name = models.CharField(max_length = 255,default="group_s%s"%(date.today()))
+    name = models.CharField(max_length = 255,blank=False,null=True)
     date = models.DateField(auto_now_add=True,editable=False)
-    version = models.CharField(max_length = 255,default="unknown version", editable=False)
+    version = models.CharField(max_length = 255)
     
     def get_file(self, url='', filecontent=''):#,path="http://vulture.googlecode.com/files/mod_secu_rules.tgz"):
         """retourne file descriptor sur l'archive de regles mod security
@@ -1615,7 +1613,7 @@ class ModSecConf(models.Model):
         ('mem','mem'),
         )
 
-
+    name = models.CharField(max_length=128, blank=False, null=False)
     action = models.CharField(max_length=128, choices=MS_ACTIONS, default='Log_Block')
     allowed_content_type = models.TextField(blank=1, null=1,default='application/x-www-form-urlencoded multipart/form-data text/xml application/xml application/x-amf')
     allowed_http = models.TextField(blank=1, null=1,default='GET HEAD POST OPTIONS')
@@ -1651,49 +1649,7 @@ class ModSecConf(models.Model):
     version = models.CharField(max_length=128,blank=1, null=1)
     warning_score = models.CharField(max_length=128,blank=1, null=1,default=3)
     
-   
-    def isWildCard (self):
-        return self.alias.startswith('*')
-
-    def isFtp (self):
-        if self.Balancer_Activated:
-            url_ = self.Balancer_Node
-        else:
-            url_ = self.url
-        return url_.lower().startswith('ftp://')
-
-    def hasHeaderHost (self):
-        return Header.objects.filter(app = self).filter(name__iexact="Host")
-
-    def hasBlackIp (self):
-        return BlackIP.objects.filter(app = self)
-
-    def getJKDirective (self):
-        return JKDirective.objects.filter(app=self)
-
-    def getCookieDomain (self):
-        p = re.compile ('https?://(.*)/?')
-        match=p.match(self.url)
-    	if not match:
-	        return " "
-        domain = match.group(1)
-        newdomain = self.name
-    	if "/" in newdomain:
-            newdomain=newdomain.split("/",1)[0]
-        if domain:
-            return "ProxyPassReverseCookieDomain "+domain+" "+newdomain
-        return " "
-
-    def getCookiePath (self):
-        if "/" in self.name:
-            path = self.name.split("/",1)[1]
-            return "ProxyPassReverseCookiePath / /"+path
-        return " "
- 
     def __str__(self):
-        return self.name# + " : " + ", ".join([i.name for i in self.intf.all()])
+        return self.name
     class Meta:
         db_table = 'modsecuconf'
-        permissions = (
-            ("reload_app", "Can stop/start application"),
-        )
