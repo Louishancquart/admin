@@ -2,11 +2,12 @@
 {% load i18n %}
 
 {% block title %}
-	{% trans "System" %} - <small>{% trans "Groupe view" %}</small>
+	{% trans "Web Firewall" %} - <small>{% trans "file list" %}</small>
 {% endblock %}
 
 {% block tabs %}
-    <li><a href="/group/">{% trans "List" %}</a></li>
+    <li><a href="/policy/"/>{% trans "List" %}</a></li>
+
     <li><a href="#" id="main_tab_1" class="active">{% trans "Main settings" %}</a></li>
 {% endblock %}
 
@@ -21,12 +22,12 @@
     </table>
     <table>
         {% for group in groups %}
-        <tr><th>{{group.name}}</th><th>{% trans "Select"%}</th></tr>
-        {%for fichier in group.fichier_set.all%}
-        <tr>
-            <td>{{fichier.name}}</td><td><input type="checkbox" name="file_{{fichier.pk}}"/></td>
-        </tr>
-        {% endfor %}
+        <tr><th>{{group.nom}}</th><th>{% trans "Select"%}</th></tr>
+            {%for fichier in group.fichiers %}
+            <tr>
+                <td>{{fichier.name}}</td><td><input type="checkbox" name="file_{{fichier.pk}}" {% if fichier.checked %} checked="checked"{%endif%}/></td>
+            </tr>
+            {%endfor%}
         {% endfor %}
     </table>
     </form>

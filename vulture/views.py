@@ -762,37 +762,57 @@ def view_group(request, object_id):
 
 def edit_policy_files(request, object_id):
     policy = get_object_or_404(Politique, id=object_id)
+    
     if request.method=="POST":
         #regex des files affectes a une policy
         reg=re.compile('^file_(\d+)$')
         ids=[int(m.group(1)) for m in [ reg.match(n) for n in request.POST] if m]
-        # big todo
-        #ajouter un delete from fichier politique where politique.id == politique.pk and Fichier.id not in ids #query_set, on met un filter
-        #for policy_pk in ids:
-        #    q=FichierPolitique.objects.filter(policy_pk==1).exclude()
+                
+        #== delete from fichier_politique where politique.id == politique.pk and Fichier.id not in ids #query_set, on met un filter
+        FichierPolitique.objects.filter(politique=policy).exclude(fichier__in=ids).delete()
+        left_ids = [f.fichier.pk for f in FichierPolitique.objects.filter(politique=policy)]
+        
+        for new_id in set(ids)-set(left_ids):
+            policy.fichierpolitique_set.create(fichier_id=new_id)
 
-            
-       # i=0
-       # policy_file_list=FichierPolitique.objects.all()
-       # for fichierp in policy:
-       #     if fichierp.pk==ids[i]:
-       #         i+=1
-       #     else:
-       #         fichierp.delete()
-         
-            
         return HttpResponseRedirect('/policy/%s'%policy.pk)
-    return render_to_response('vulture/policy_file_form.html', {'groups':Groupe.objects.all()})
+
+    selected = [f.fichier.pk for f in FichierPolitique.objects.filter(politique=policy)]
+    t=[]
+    for g in Groupe.objects.all():
+        fichiers = []
+        for f in g.fichier_set.filter(name__endswith='.conf'):
+            fichiers += [{'name':f.name,'pk':f.pk,'checked':f.pk in selected}]
+        t+=[{'nom':g.name, 'fichiers':fichiers}]
+
+    return render_to_response('vulture/policy_file_form.html', {'groups':t})
 
 def edit_policy(request, object_id=None):
-    form = PolicyForm(request.POST or None, instance = object_id != None and Politique.objects.get(pk=object_id) or None)
+    if object_id!= None:
+        politique = get_object_or_404(Politique, pk=object_id)
+    else:
+        politique = None
+    form = PolicyForm(request.POST or None, instance = politique)
     if request.method=="POST":
         if form.is_valid():
             policy = form.save()
             if 'add_button' in request.POST :
                 return HttpResponseRedirect('/policy/%s/files'%policy.pk)
             return HttpResponseRedirect('/policy/')
-    return render_to_response('vulture/policy_form.html', {'form':form, })
+     
+    return render_to_response('vulture/policy_form.html', {'form':form,'policy_files': politique and politique.fichierpolitique_set.all() })
+
+#a faire
+def edit_rules(request, object_id=None):
+    form = IgnoreRulesForm(request.POST or None, instance = object_id != None and IgnoreRules.objects.get(pk=object_id) or None)
+    if request.method=="POST":
+        if form.is_valid():
+            rules= form.save()
+            if 'add_button' in request.POST :
+                return HttpResponseRedirect('/policy/%s/files'%policy.pk)
+            return HttpResponseRedirect('/policy/')
+     
+    return render_to_response('vulture/ignore_rules_form.html', {'form':form,})
 
 @login_required
 def generator (request):

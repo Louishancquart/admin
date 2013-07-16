@@ -95,26 +95,37 @@ class Fichier(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        db_table = "file"
+
 class Politique(models.Model):
     name = models.CharField(max_length = 255)
 
     def __unicode__(self):
-        return self.name
+        return self.id
+
+    class Meta:
+        db_table = "policy"
 
 class FichierPolitique(models.Model):
     politique = models.ForeignKey(Politique)
     fichier = models.ForeignKey(Fichier)
 
     def __unicode__(self):
-        return self.name
+        return self.fichier.name
+
+    class Meta:
+        db_table = "policy_file"
 
 class IgnoreRules(models.Model):
-    name = models.CharField(max_length = 255)
     rules_number = models.IntegerField()
     fichier_politique = models.ForeignKey(FichierPolitique)
 
     def __unicode__(self):
-        return self.name
+        return self.fichier.name
+
+    class Meta:
+        db_table = "ignore_rules"
 
 class PluginCAS(models.Model):
     auth = models.ForeignKey('Auth',null=1,blank=1)

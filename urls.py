@@ -97,6 +97,11 @@ urlpatterns = patterns('',
   (r'^policy/((?P<object_id>\d+)|new)/?$', 'vulture.views.edit_policy'),
   (r'^policy/(?P<object_id>\d+)/files/?$', 'vulture.views.edit_policy_files'),
   
+ # (r'^policy/(?P<object_id>\d+)/del/$',        'vulture.views.vulture_delete_object_adm', dict({'model': Groupe}, template_name='vulture/generic_confirm_delete.html', extra_context = dict(category='Web Firewall', name='Group', url='/group'), post_delete_redirect='/group/')),
+ 
+  (r'^policy/ingnorerules/((?P<object_id>\d+)|new)/?$', 'vulture.views.edit_rules'),
+
+
   (r'^group/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Groupe.objects.all()}, template_name='vulture/generic_list.html',extra_context = dict(category='Web Firewall', name='Group', url='/group'))),
   (r'^group/new/?$',                          'vulture.views.edit_group'),
   (r'^group/(?P<object_id>\d+)/?$',           'vulture.views.view_group'),

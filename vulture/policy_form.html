@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block tabs %}
-    <li><a href="/group/">{% trans "List" %}</a></li>
+    <li><a href="/policy/">{% trans "List" %}</a></li>
     <li><a href="#" id="main_tab_1" class="active">{% trans "Main settings" %}</a></li>
 {% endblock %}
 
@@ -18,10 +18,32 @@
         <tr>
         <th colspan="2"><input type="submit" name="add_button" value="{% trans "Save and select files" %}"/></th>
         </tr>
+    </table>
+        <table>
+            {% if policy_files %}
+
+            {% for pfile in policy_files %}
+            <tr>
+                <th>{{pfile.fichier.name}}</th>
+                <td>{% if not nodelete %}
+
+                    <a href="ignorerules/{{ pfile.id }}/del/">
+                        <img src="/img/vulture2/trash.png" alt="delete" />
+                    </a>{% endif %}
+
+                    {% if not noedit %}
+                    <a href="ignorerules/{{ pfile.id }}">
+                        <img src="/img/vulture2/edit.png" alt="edit" />
+                    </a>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+
+            {% endif %}
+        </table>
         <tr>
         <th colspan="2"><input type="submit" name="save_button" value="{% trans "Save settings" %}" /></th>
         </tr>
-    </table>
     </form>
     </div>
 {% endblock %}
