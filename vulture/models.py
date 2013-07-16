@@ -122,7 +122,7 @@ class IgnoreRules(models.Model):
     fichier_politique = models.ForeignKey(FichierPolitique)
 
     def __unicode__(self):
-        return self.fichier.name
+        return str(self.rules_number)
 
     class Meta:
         db_table = "ignore_rules"

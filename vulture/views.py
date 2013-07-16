@@ -365,9 +365,6 @@ def edit_app(request,object_id=None):
         fpath = "%s/%s"%(custom_app_p,fname)
         dataPosted = request.POST
         app = form.save()
-        #Delete old headers
-        headers = Header.objects.filter(app=object_id)
-        headers.delete()
         fjkd = FJKD(request.POST,instance=inst)
         if fjkd.is_valid():
             fjkd.save()
@@ -441,6 +438,8 @@ def edit_app(request,object_id=None):
                         os.remove("%s/%s"%(rep,rmfile))
                     os.rmdir(rep)
         # headers .. 
+        headers = Header.objects.filter(app=object_id)#Delete old headers
+        headers.delete()
         for data in dataPosted:
             m = re.match('header_id-(\d+)',data)
             if m != None:
@@ -793,26 +792,39 @@ def edit_policy(request, object_id=None):
     else:
         politique = None
     form = PolicyForm(request.POST or None, instance = politique)
+
     if request.method=="POST":
         if form.is_valid():
             policy = form.save()
             if 'add_button' in request.POST :
                 return HttpResponseRedirect('/policy/%s/files'%policy.pk)
             return HttpResponseRedirect('/policy/')
-     
+         
+        #reg = re.compile('ignore_id-(\d+)')
+        #for data in dataPosted:
+        #    m = reg.match(data)
+        #    if m != None:
+        #        id_ = m.group(1)
+        #        rule = request.POST['field_rule-' + id_]
+        #        _ = request.POST['field_fichier_politique-' + id_]
+        #        if desc and type_:
+        #            instance = IgnoreRules( fichier_politique = desc, value = request.POST['field_value-' + id_], type=type_)
+        #            instance.save()
     return render_to_response('vulture/policy_form.html', {'form':form,'policy_files': politique and politique.fichierpolitique_set.all() })
 
 #a faire
-def edit_rules(request, object_id=None):
-    form = IgnoreRulesForm(request.POST or None, instance = object_id != None and IgnoreRules.objects.get(pk=object_id) or None)
-    if request.method=="POST":
-        if form.is_valid():
-            rules= form.save()
-            if 'add_button' in request.POST :
-                return HttpResponseRedirect('/policy/%s/files'%policy.pk)
-            return HttpResponseRedirect('/policy/')
-     
-    return render_to_response('vulture/ignore_rules_form.html', {'form':form,})
+#def edit_rules(request, object_id=None):
+#    if (object_id != None):
+#        ignorerule=get_object_or_404(IgnoreRules, pk=object_id)
+#    else:
+#        ignorerule = None
+#
+#    form = IgnoreRulesForm(request.POST or None, instance = ignorerule )
+#    if request.method=="POST":
+#        if form.is_valid():
+#            rules= form.save()
+#     
+#    return render_to_response('vulture/ignore_rules_form.html', {'form':form,})
 
 @login_required
 def generator (request):

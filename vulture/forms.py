@@ -8,6 +8,10 @@ import os
 import hashlib
 import ifconfig
 
+#class IgnoreRulesForm(forms.ModelForm):
+#    class Meta:
+#        model=IgnoreRules
+
 class PolicyForm(forms.ModelForm):
     class Meta:
         model=Politique
