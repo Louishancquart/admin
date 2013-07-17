@@ -24,7 +24,7 @@
             input.type="text";
             input.name="ignore_"+element.id+"_"+tab.childElementCount;
             input.style.width="100px";
-            td2.innerHTML="<a href='#'><img id='del{{ forloop.counter }}' onclick='del_ignore_rule(this)' src='/img/vulture2/trash.png' alt='delete' /></a>";
+            td2.innerHTML="<a href=\"#\"><img id=\"del"+tab.childElementCount+"\" onclick=\"del_ignore_rule(this)\" src=\"/img/vulture2/trash.png\" alt=\"delete\" /></a>";
             td.appendChild(label);
             td.appendChild(input);
             tr.appendChild(td);
