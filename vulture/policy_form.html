@@ -12,12 +12,29 @@
 
 {% block content %}
     <script type=text/javascript>
-        function(element){
-            tab = document.getElementById("tab-"+element.id);
-            tr = document.createElement("tr")
-            th= document.createElement("th")
-            th.innerHTLM = "blabla"+element.id
-            
+        function add_ignore_rule(element){
+            tab = document.getElementById("tab_"+element.id);
+            tr = document.createElement("tr");
+            td= document.createElement("td");
+            td2= document.createElement("td");
+            label = document.createElement("label");
+            input=document.createElement("input");
+
+            label.innerText="ignore rule :  ";
+            input.type="text";
+            input.name="ignore_"+element.id+"_"+tab.childElementCount;
+            input.style.width="100px";
+            td2.innerHTML="<a href='#'><img id='del{{ forloop.counter }}' onclick='del_ignore_rule(this)' src='/img/vulture2/trash.png' alt='delete' /></a>";
+            td.appendChild(label);
+            td.appendChild(input);
+            tr.appendChild(td);
+            tr.appendChild(td2);
+            tab.appendChild(tr);
+        }
+
+        function del_ignore_rule(el){
+            tr=el.parentNode.parentNode.parentNode;
+            el.parentNode.parentNode.parentNode.parentNode.removeChild(tr);
         }
     </script>
 
@@ -26,45 +43,50 @@
     <table>
         {{form}}
         <tr>
-        <th colspan="2"><input type="submit" name="add_button" value="{% trans "Save and select files" %}"/></th>
+            <th colspan="2"><input type="submit" name="add_button" value="{% trans "Save and select files" %}"/></th>
         </tr>
     </table>
-        <table>
-            {% if policy_files %}
-
-            {% for pfile in policy_files %}
-            <tr>
-                <th>{{pfile.fichier.name}}</th>
-                <td>
-                    {% if not noedit %}
-                    <a href="ignorerules/{{ pfile.id }}">
-                        <img id="add" src="/img/vulture2/add.png" onclick="add_rule(this)" alt="add" />
-                    </a>{% endif %}
-                </td>
-            </tr>
-
-                {% for ignorerule in pfile.ignorerules_set.all %}
+    <table>    
+    <tbody>
+        {% if policy_files %}
+        {% for pfile in policy_files %}
+        <tr>
+            <th>{{pfile.fichier.name}}</th>
+            <td id="file_{{pfile.pk}}" onclick="add_ignore_rule(this)">
+                {% if not noedit %}
+                <a href="#">
+                    <img src="/img/vulture2/add.png" alt="add" id="add{{forloop.counter}}" />
+                </a>{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <table>
+                <tbody id="tab_file_{{pfile.pk}}">
+                    {% for ignorerule in pfile.ignorerules_set.all %}
                     <tr >
-                        <th style="text-align:right;
-                                   background-color:white;
-                                   color:grey;">
+                        <td >
                                    
                                    {% trans "ignored rule :" %}                     
                                    {{ ignorerule.rules_number }}</th>
                         <td>
-                            <a href="ignorerules/{{ pfile.id }}/del/">
-                                <img id="del" src="/img/vulture2/trash.png" alt="delete" />
+                            <a href="#">
+                                <img id="del{{ forloop.counter }}" onclick="del_ignore_rule(this)" src="/img/vulture2/trash.png" alt="delete" />
                             </a>
                         </td>
                     </tr>
-                {% endfor %}
-            {% endfor %}
-
-            {% endif %}
-        </table>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </td>
+        </tr>
+        {% endfor %}
+        {% endif %}
         <tr>
         <th colspan="2"><input type="submit" name="save_button" value="{% trans "Save settings" %}" /></th>
         </tr>
+    </tbody>
+    </table>
     </form>
     </div>
 {% endblock %}
