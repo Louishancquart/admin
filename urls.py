@@ -93,13 +93,11 @@ urlpatterns = patterns('',
   (r'^security/(?P<object_id>\d+)/del/$',     'vulture.views.remove_security'),
   
   (r'^policy/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Politique.objects.all()}, template_name='vulture/generic_list.html',extra_context = dict(category='Web Firewall', name='Policy', url='/policy'))),
- # (r'^policy/new/?$',                          'vulture.views.edit_policy'),
   (r'^policy/((?P<object_id>\d+)|new)/?$', 'vulture.views.edit_policy'),
   (r'^policy/(?P<object_id>\d+)/files/?$', 'vulture.views.edit_policy_files'),
   
- # (r'^policy/(?P<object_id>\d+)/del/$',        'vulture.views.vulture_delete_object_adm', dict({'model': Groupe}, template_name='vulture/generic_confirm_delete.html', extra_context = dict(category='Web Firewall', name='Group', url='/group'), post_delete_redirect='/group/')),
+  (r'^policy/(?P<object_id>\d+)/del/$',        'vulture.views.vulture_delete_object_adm', dict({'model': Politique}, template_name='vulture/generic_confirm_delete.html', extra_context = dict(category='Web Firewall', name='Policy', url='/policy'), post_delete_redirect='/policy/')),
  
-  #(r'^policy/ignorerules/((?P<object_id>\d+)|new)/?$', 'vulture.views.edit_rules'),
 
 
   (r'^group/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Groupe.objects.all()}, template_name='vulture/generic_list.html',extra_context = dict(category='Web Firewall', name='Group', url='/group'))),

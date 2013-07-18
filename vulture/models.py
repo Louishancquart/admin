@@ -102,7 +102,7 @@ class Politique(models.Model):
     name = models.CharField(max_length = 255)
 
     def __unicode__(self):
-        return self.id
+        return self.name
 
     class Meta:
         db_table = "policy"

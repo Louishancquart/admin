@@ -19,22 +19,24 @@
             td2= document.createElement("td");
             label = document.createElement("label");
             input=document.createElement("input");
-
-            label.innerText="ignore rule :  ";
+            
+            label.for="ignored_rule"
+            label.textContent="ignored rule :";
             input.type="text";
-            input.name="ignore_"+element.id+"_"+tab.childElementCount;
-            input.style.width="100px";
-            td2.innerHTML="<a href=\"#\"><img id=\"del"+tab.childElementCount+"\" onclick=\"del_ignore_rule(this)\" src=\"/img/vulture2/trash.png\" alt=\"delete\" /></a>";
+            input.name="ignore_"+element.id+"_"+(tab.childElementCount+1);
+            td2.innerHTML="<img id=\"del"+(tab.childElementCount+1)+"\" onclick=\"del_ignore_rule(this)\" src=\"/img/vulture2/trash.png\" alt=\"delete\" />";
+            label.appendChild(input);
             td.appendChild(label);
-            td.appendChild(input);
             tr.appendChild(td);
+            td2.style.float="right";
+            td2.style.width="16px";
             tr.appendChild(td2);
             tab.appendChild(tr);
         }
 
         function del_ignore_rule(el){
-            tr=el.parentNode.parentNode.parentNode;
-            el.parentNode.parentNode.parentNode.parentNode.removeChild(tr);
+            tr=el.parentNode.parentNode;
+            el.parentNode.parentNode.parentNode.removeChild(tr);
         }
     </script>
 
@@ -54,9 +56,8 @@
             <th>{{pfile.fichier.name}}</th>
             <td id="file_{{pfile.pk}}" onclick="add_ignore_rule(this)">
                 {% if not noedit %}
-                <a href="#">
                     <img src="/img/vulture2/add.png" alt="add" id="add{{forloop.counter}}" />
-                </a>{% endif %}
+                {% endif %}
             </td>
         </tr>
         <tr>
@@ -65,14 +66,9 @@
                 <tbody id="tab_file_{{pfile.pk}}">
                     {% for ignorerule in pfile.ignorerules_set.all %}
                     <tr >
-                        <td >
-                                   
-                                   {% trans "ignored rule :" %}                     
-                                   {{ ignorerule.rules_number }}</th>
-                        <td>
-                            <a href="#">
-                                <img id="del{{ forloop.counter }}" onclick="del_ignore_rule(this)" src="/img/vulture2/trash.png" alt="delete" />
-                            </a>
+                        <td ><label>{% trans "ignored rule :" %}<input type="text" name="ignore_file_{{pfile.pk}}_{{forloop.counter}}" value="{{ ignorerule.rules_number }}"></label></th>
+                        <td style="float:right;width:16px;">
+                                <img style="float:inherit;" id="del{{ forloop.counter }}" onclick="del_ignore_rule(this)" src="/img/vulture2/trash.png" alt="delete" />
                         </td>
                     </tr>
                     {% endfor %}
