@@ -743,13 +743,15 @@ def edit_group(request, object_id=None):
         form = GroupSecurityForm(request.POST,request.FILES,instance=inst)
         if form.is_valid(): 
             groupe = form.save()
-            fcontent = ''
-            if form.cleaned_data.get('path'):
-                fd = groupe.get_file(filecontent = request.FILES['path'].read())
-            else:
-                fd = groupe.get_file(url = form.cleaned_data.get('url'))
-            groupe.extract_archive(fd)
-            #groupe.extract_archive(mover.dl_archive(groupe.url))
+            try:
+                if form.cleaned_data.get('path'):
+                    fd = groupe.get_file(filecontent = request.FILES['path'].read())
+                else:
+                    fd = groupe.get_file(url = form.cleaned_data.get('url'))
+                groupe.extract_archive(fd)
+            except:
+                groupe.delete()
+                raise
             return HttpResponseRedirect('/group/%s/'%groupe.pk)
     else:
         form = GroupSecurityForm(instance=inst )
@@ -796,18 +798,19 @@ def edit_policy(request, object_id=None):
     if request.method=="POST":
         if form.is_valid():
             policy = form.save()
+            IgnoreRules.objects.filter(fichier_politique__in=policy.fichierpolitique_set.all()).delete() 
             
-            #gestion des ignores rules
-            IgnoreRules.objects.all().delete() 
+            #creation des ignores rules en base
             reg = re.compile('ignore_file_(\d+)_(\d+)')
             for data in request.POST:
                 n = reg.match(data)
-
-                if n != None:
+                if n:
                     fichier_politique = n.group(1)
-                    ignore_rule = IgnoreRules(fichier_politique = FichierPolitique.objects.get(pk=fichier_politique), rules_number =request.POST[data])
-                    ignore_rule.save()
-            
+                    
+                    if request.POST[data]: 
+                        ignore_rule = IgnoreRules(fichier_politique = FichierPolitique.objects.get(pk=fichier_politique), rules_number =request.POST[data])
+                        ignore_rule.save()
+                        
             if 'add_button' in request.POST :
                 return HttpResponseRedirect('/policy/%s/files'%policy.pk)
             return HttpResponseRedirect('/policy/')

@@ -45,7 +45,7 @@
     <table>
         {{form}}
         <tr>
-            <th colspan="2"><input type="submit" name="add_button" value="{% trans "Save and select files" %}"/></th>
+            <th colspan="2"><input type="submit" name="add_button" value="{% trans "Rules set selection" %}"/></th>
         </tr>
     </table>
     <table>    
@@ -66,7 +66,11 @@
                 <tbody id="tab_file_{{pfile.pk}}">
                     {% for ignorerule in pfile.ignorerules_set.all %}
                     <tr >
-                        <td ><label>{% trans "ignored rule :" %}<input type="text" name="ignore_file_{{pfile.pk}}_{{forloop.counter}}" value="{{ ignorerule.rules_number }}"></label></th>
+                        <td ><label>{% trans "ignored rule :" %}<input type="text" name="ignore_file_{{pfile.pk}}_{{forloop.counter}}" value="{{ ignorerule.rules_number }}"></label>
+                        {% if ignorerule.is_strange %}
+                            <p><img src="/img/vulture2/info.png" alt="info" /> rule id non trouvée dans les fichiers en base </p>
+                        {% endif %}
+                        </td>
                         <td style="float:right;width:16px;">
                                 <img style="float:inherit;" id="del{{ forloop.counter }}" onclick="del_ignore_rule(this)" src="/img/vulture2/trash.png" alt="delete" />
                         </td>

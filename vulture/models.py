@@ -33,9 +33,9 @@ from django.contrib.auth.models import User as DjangoUser, UserManager as Django
 from django import forms
 import base64
 import ifconfig
-import tarfile,zipfile
+import tarfile,zipfile,gzip
 from datetime import datetime,date
-from urllib import urlopen
+import urllib2
 import tempfile
 import shutil
 
@@ -49,19 +49,29 @@ class Groupe(models.Model):
         """retourne file descriptor sur l'archive de regles mod security
         Attention, ne pas oublier de fermer ce fd..."""
         t = tempfile.NamedTemporaryFile()
-        if url:
-            t.write(urlopen(url).read())
+        if url: 
+            proxy_url= Conf.objects.filter(var__contains="proxy").get().value 
+            proxy_handler = urllib2.ProxyHandler({'http': proxy_url, 'https': proxy_url, 'ftp':proxy_url })
+            opener = urllib2.build_opener(proxy_handler)
+            t.write('')
+            t.write(opener.open(url).read())
         else:
             t.write(filecontent)
+        t.seek(0,0)
         return t
 
     def walk_dir(self, tempdir):
         """parcoure recursivement le path et lance la fonction d'ajout pour tous les fichiers"""
+        reg = re.compile('.*\.(conf|data|lua|js|c|pl|tests)$')
         for root, dirs, files in os.walk(tempdir):
             for each_file in files:
+                if not reg.match(each_file):
+                    continue
                 path_file="%s/%s"%(root,each_file)
-                f=open(path_file, "r")
-                self.fichier_set.create(name=each_file,content=f.read(),groupe=self)
+                f=open(path_file, "rb")
+                print "path ! : %s"%path_file
+                content = f.read().decode('utf-8',errors='replace')
+                self.fichier_set.create(name=each_file,content=content,groupe=self)
                 f.close()
         return True
 
@@ -101,6 +111,11 @@ class Fichier(models.Model):
 class Politique(models.Model):
     name = models.CharField(max_length = 255)
 
+    def has_strange_ignore(self):
+        for i in self.fichierpolitique_set.all():
+            if i.has_strange_ignore():
+                return True
+
     def __unicode__(self):
         return self.name
 
@@ -110,6 +125,11 @@ class Politique(models.Model):
 class FichierPolitique(models.Model):
     politique = models.ForeignKey(Politique)
     fichier = models.ForeignKey(Fichier)
+
+    def has_strange_ignore(self):
+        for i in self.ignorerules_set.all():
+            if i.is_strange():
+                return True
 
     def __unicode__(self):
         return self.fichier.name
@@ -121,6 +141,11 @@ class IgnoreRules(models.Model):
     rules_number = models.IntegerField()
     fichier_politique = models.ForeignKey(FichierPolitique)
 
+    def is_strange(self):
+        reg2 = re.compile("id\s*:\s*'(\d+)'",re.MULTILINE)
+        ids = [ int(i) for i in reg2.findall(self.fichier_politique.fichier.content)]
+        return self.rules_number not in ids
+        
     def __unicode__(self):
         return str(self.rules_number)
 

@@ -100,10 +100,10 @@ urlpatterns = patterns('',
  
 
 
-  (r'^group/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Groupe.objects.all()}, template_name='vulture/generic_list.html',extra_context = dict(category='Web Firewall', name='Group', url='/group'))),
+  (r'^group/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Groupe.objects.all()}, template_name='vulture/generic_list.html',extra_context = dict(category='Web Firewall', name='Rule Set', url='/group'))),
   (r'^group/new/?$',                          'vulture.views.edit_group'),
   (r'^group/(?P<object_id>\d+)/?$',           'vulture.views.view_group'),
-  (r'^group/(?P<object_id>\d+)/del/$',        'vulture.views.vulture_delete_object_adm', dict({'model': Groupe}, template_name='vulture/generic_confirm_delete.html', extra_context = dict(category='Web Firewall', name='Group', url='/group'), post_delete_redirect='/group/')),
+  (r'^group/(?P<object_id>\d+)/del/$',        'vulture.views.vulture_delete_object_adm', dict({'model': Groupe}, template_name='vulture/generic_confirm_delete.html', extra_context = dict(category='Web Firewall', name='Rule Set', url='/group'), post_delete_redirect='/group/')),
 
   (r'^plugin/$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Plugin.objects.all()}, template_name='vulture/generic_list.html', extra_context = dict(category='Web Applications', name='Plugin', url='/plugin', noname=True, fields=(('app','App'), ('uri_pattern','URI Pattern'), ('type','Type'), ('options','Options'))))),
   (r'^plugin/(?P<object_id>\d+)/$',           'vulture.views.vulture_update_object_adm', dict({'model': Plugin}, post_save_redirect='/plugin/')),
@@ -165,6 +165,7 @@ urlpatterns = patterns('',
   (r'^conf/(?P<object_id>\d+)/$','vulture.views.vulture_update_object_adm',dict({'model':Conf}, post_save_redirect='/conf')),
   (r'^conf/new/$','vulture.views.vulture_create_object_adm' , dict({'model':Conf}, post_save_redirect='/conf')),
   (r'^conf/(?P<object_id>\d+)/del/$','vulture.views.vulture_delete_object_adm' , dict({'model':Conf}, template_name='vulture/generic_confirm_delete.html',extra_context= dict(category='System', name='Globales', url='/conf'), post_delete_redirect='/conf/')),
+
   (r'^cluster/$',	'vulture.views.manage_cluster'),
   (r'^plugincas/$','vulture.views.plugincas_config'),
   (r'^(?P<url>logic)/(?P<object_id>\d+)/$',    'vulture.views.edit_auth'),
