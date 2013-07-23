@@ -1145,7 +1145,7 @@ class App(models.Model):
     url = models.CharField(max_length=256)
     intf = models.ManyToManyField('Intf',db_table='app_intf')
     log = models.ForeignKey('Log')
-#    security = models.ManyToManyField('ModSecurity',null=1,blank=1,db_table='app_security')
+    security = models.ForeignKey('ModSecConf',null=1,blank=1)
     logon_url = models.CharField(max_length=128,null=1,blank=1)
     logout_url = models.CharField(max_length=128,null=1,blank=1)
     up = models.BooleanField(default=1)
@@ -1185,41 +1185,6 @@ class App(models.Model):
     sso_learning_ext = models.CharField(max_length=128,null=1,blank=1)
     secondary_authentification_failure_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
     secondary_authentification_failure_options = models.CharField(max_length=128, blank=1, null=1)
-    version = models.CharField(max_length=128,blank=1, null=1)
-    action = models.CharField(max_length=128, choices=MS_ACTIONS, default='Log_Block')
-    motor = models.CharField(max_length=128, choices=MOTOR, default='Anomaly')
-    paranoid = models.BooleanField()
-    UTF = models.BooleanField()
-    XML = models.BooleanField()
-    BodyAccess = models.BooleanField()
-    critical_score = models.CharField(max_length=128,blank=1, null=1, default=5)
-    error_score = models.CharField(max_length=128,blank=1, null=1,default=4)
-    warning_score = models.CharField(max_length=128,blank=1, null=1,default=3)
-    notice_score = models.CharField(max_length=128,blank=1, null=1,default=2)
-    inbound_score = models.CharField(max_length=128,blank=1, null=1,default=5)
-    outbound_score = models.CharField(max_length=128,blank=1, null=1,default=4)
-    max_num_args = models.CharField(max_length=128,blank=1, null=1)
-    arg_name_length = models.CharField(max_length=128,blank=1, null=1)
-    arg_length = models.CharField(max_length=128,blank=1, null=1)
-    total_arg_length = models.CharField(max_length=128,blank=1, null=1)
-    max_file_size = models.CharField(max_length=128,blank=1, null=1)
-    combined_file_size = models.CharField(max_length=128,blank=1, null=1)
-    allowed_http = models.TextField(blank=1, null=1,default='GET HEAD POST OPTIONS')
-    allowed_content_type = models.TextField(blank=1, null=1,default='application/x-www-form-urlencoded multipart/form-data text/xml application/xml application/x-amf')
-    allowed_http_version = models.TextField(blank=1, null=1,default='HTTP/1.0 HTTP/1.1')
-    restricted_extensions = models.TextField(blank=1, null=1)
-    restricted_headers = models.TextField(blank=1, null=1)
-    BT_activated = models.BooleanField()
-    protected_urls = models.CharField(max_length=128,blank=1, null=1)
-    BT_burst_time_slice = models.CharField(max_length=128,blank=1, null=1,default=60)
-    BT_counter_threshold = models.CharField(max_length=128,blank=1, null=1,default=100)
-    BT_block_timeout = models.CharField(max_length=128,blank=1, null=1,default=600)
-    DoS_activated = models.BooleanField()
-    DoS_burst_time_slice = models.CharField(max_length=128,blank=1, null=1,default=60)
-    DoS_counter_threshold = models.CharField(max_length=128,blank=1, null=1,default=100)
-    DoS_block_timeout = models.CharField(max_length=128,blank=1, null=1,default=600)
-    Custom = models.TextField(blank=1, null=1)
-    MS_Activated = models.BooleanField()
     Balancer_Activated = models.BooleanField()
     Balancer_Name = models.CharField(max_length=128,blank=1,null=1)
     Balancer_Node = models.TextField(blank=1, null=1)
@@ -1250,6 +1215,7 @@ class App(models.Model):
     cache_max_expire = models.IntegerField(default=86400)
     cache_store_no_store = models.BooleanField(default=False)
     cache_store_private = models.BooleanField(default=False)
+    
     
     def isWildCard (self):
         return self.alias.startswith('*')
@@ -1647,6 +1613,10 @@ class ModSecConf(models.Model):
         ('disk','disk'),
         ('mem','mem'),
         )
+    
+
+    
+    #modSecurityConf = models.ForeignKey(App)
 
     name = models.CharField(max_length=128, blank=False, null=False)
     action = models.CharField(max_length=128, choices=MS_ACTIONS, default='Log_Block')
@@ -1672,7 +1642,6 @@ class ModSecConf(models.Model):
     max_file_size = models.CharField(max_length=128,blank=1, null=1)
     max_num_args = models.CharField(max_length=128,blank=1, null=1)
     motor = models.CharField(max_length=128, choices=MOTOR, default='Anomaly')
-    MS_Activated = models.BooleanField()
     notice_score = models.CharField(max_length=128,blank=1, null=1,default=2)
     outbound_score = models.CharField(max_length=128,blank=1, null=1,default=4)
     paranoid = models.BooleanField()
@@ -1681,7 +1650,6 @@ class ModSecConf(models.Model):
     restricted_headers = models.TextField(blank=1, null=1)
     total_arg_length = models.CharField(max_length=128,blank=1, null=1)
     UTF = models.BooleanField()
-    version = models.CharField(max_length=128,blank=1, null=1)
     warning_score = models.CharField(max_length=128,blank=1, null=1,default=3)
     
     def __str__(self):

@@ -350,6 +350,8 @@ def edit_app(request,object_id=None):
     form = AppForm(request.POST or None,instance=inst)
     form.header = Header.objects.order_by("-id").filter(app=object_id)
     FJKD = inlineformset_factory(App, JKDirective, extra=4)
+    #form.securityForm = ModSecurityForm(request.POST or None,instance=inst.modsecconf_set.)
+
     # Save new/edited app
     if request.method == 'POST' and form.is_valid():
         appdirname = request.POST['name']

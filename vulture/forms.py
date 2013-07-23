@@ -83,7 +83,7 @@ class UserProfileForm(UserCreationForm):
         user.is_superuser = self.cleaned_data['is_superuser']
         user.save()
 
-        # try:
+        # try
             # profile = user.get_profile()
         # except:
             # profile = UserProfile(user=user)
@@ -217,6 +217,12 @@ class SSOForm(forms.ModelForm):
         model= SSO
         
 class ModSecurityForm(forms.ModelForm):
+    
+    #securitybase = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
+    #securityexp = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
+    #securityopt = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
+    #securityslr = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
+    #CUSTOM = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
     class Meta:
         model = ModSecConf
 
