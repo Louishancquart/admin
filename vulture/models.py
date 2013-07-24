@@ -45,6 +45,29 @@ class Groupe(models.Model):
     date = models.DateField(auto_now_add=True,editable=False)
     version = models.CharField(max_length = 255)
     
+    def deploy_ondisk(self):
+        """put group files on disk to be used by apache"""
+        dir_path = settings.CONF_PATH+"security-rules/"+self.name+"/"
+        
+        #creer un dossier "gpe_version" dans security rules en utilisant settings.conf
+        if not self.is_ondisk():
+            os.makedirs(dir_path)
+            print "directory created"
+
+        #pour chaque fichier ratache au groupe dans la DB
+        for file in self.fichier_set.all():                    
+                        
+            #ajouter un include dans le fichier vulture_httpd.conf
+            
+            #Deployer le fichier:
+            #creer le dossier racine du fichier    
+            #creer le fichier
+            print dir_path+file.name
+            f=open(dir_path+file.name,'w')
+            f.write(file.content.encode('utf-8'))
+            f.close()
+        return True
+
     def get_file(self, url='', filecontent=''):#,path="http://vulture.googlecode.com/files/mod_secu_rules.tgz"):
         """retourne file descriptor sur l'archive de regles mod security
         Attention, ne pas oublier de fermer ce fd..."""
@@ -69,9 +92,9 @@ class Groupe(models.Model):
                     continue
                 path_file="%s/%s"%(root,each_file)
                 f=open(path_file, "rb")
-                print "path ! : %s"%path_file
+                print "path : %s"%"/".join(path_file.split("/")[3:])
                 content = f.read().decode('utf-8',errors='replace')
-                self.fichier_set.create(name=each_file,content=content,groupe=self)
+                self.fichier_set.create(name=each_file,content=content,groupe=self,path_name="/".join(path_file.split("/")[3:]))
                 f.close()
         return True
 
@@ -90,6 +113,10 @@ class Groupe(models.Model):
         self.walk_dir(destination_path)
         shutil.rmtree(destination_path)
         return True
+    
+    def is_ondisk(self):
+        """check if groups files of the group exists on the disk"""
+        return os.path.exists(settings.CONF_PATH+"security-rules/"+self.name)
 
     def __unicode__(self):
         return self.name
@@ -100,6 +127,7 @@ class Groupe(models.Model):
 class Fichier(models.Model):
     name    = models.CharField(max_length = 255)
     content = models.TextField()
+    path_name = models.CharField(max_length = 255)
     groupe  = models.ForeignKey(Groupe)
     
     def __unicode__(self):
@@ -1652,6 +1680,10 @@ class ModSecConf(models.Model):
     UTF = models.BooleanField()
     warning_score = models.CharField(max_length=128,blank=1, null=1,default=3)
     
+    def to_file(self):
+        t = get_template("mod_secu.conf")
+        return t.render(Context({'conf':self}))
+
     def __str__(self):
         return self.name
     class Meta:

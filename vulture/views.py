@@ -350,7 +350,7 @@ def edit_app(request,object_id=None):
     form = AppForm(request.POST or None,instance=inst)
     form.header = Header.objects.order_by("-id").filter(app=object_id)
     FJKD = inlineformset_factory(App, JKDirective, extra=4)
-    #form.securityForm = ModSecurityForm(request.POST or None,instance=inst.modsecconf_set.)
+    
 
     # Save new/edited app
     if request.method == 'POST' and form.is_valid():
@@ -372,73 +372,14 @@ def edit_app(request,object_id=None):
             fjkd.save()
         else:
             raise ValueError("bad inline formset !!!!")
-        if "MS_Activated" in dataPosted:
-            # create needed directories for this app
-            for rep in (path,custom_p,custom_app_p,app_acti_p):
-                if not os.path.exists(rep):
-                    os.mkdir(rep,0770)
-            # get variables we send to the template
-            mod_secu_vars = {"appname":app.name}
-            for row in ('version','action',
-                    'motor',
-                    'critical_score','warning_score','error_score',
-                    'notice_score','inbound_score','outbound_score',
-                    'paranoid', 'UTF', 'XML', 'BodyAccess',
-                    'max_num_args', 'arg_name_length', 'arg_length',
-                    'total_arg_length', 'max_file_size','combined_file_size',
-                    'allowed_http','allowed_content_type',
-                    'allowed_http_version','restricted_extensions',
-                    'restricted_headers',
-                    'BT_activated', 'protected_urls',
-                    'BT_burst_time_slice', 'BT_counter_threshold',
-                    'BT_block_timeout',
-                    'DoS_activated', 'DoS_burst_time_slice', 
-                    'DoS_counter_threshold', 'DoS_block_timeout', 'Custom' ):
-                if row in dataPosted:
-                    mod_secu_vars[row]=dataPosted[row]
-            # write config file for this app
-            t = get_template("mod_secu.conf")
-            ctx = Context(mod_secu_vars)
-            conf_txt = t.render(ctx)
-            f = open(fpath,'wb')
-            f.write(conf_txt)
-            f.close()
-            # create/remove symlinks for activated rules
-            directory = {
-                            "base_rules":"securitybase",
-                            "experimental_rules":'securityexp',
-                            "optional_rules":'securityopt',
-                            "slr_rules":'securityslr',
-                            "CUSTOM":'CUSTOM'
-                       }
-            # create directory for app conf if needed
-            # remove deleted rules, add new ones
-            for dir_, file_list in directory.iteritems():
-                new_files = request.POST.getlist(file_list)
-#                if not form.fields[file_list].initial:
-#                    break;
-                for old_file in form.fields[file_list].initial:
-                    if not old_file in new_files:
-                        os.remove("%s/%s"%(app_acti_p,old_file))
-                for file_ in new_files:
-                    try:
-                        os.symlink("%s/%s/%s"%(path,dir_,file_),"%s/%s"%(app_acti_p,file_))
-                    except:
-                        pass
-                # link all data files in app directory
-            for src in directory:
-                link_path("%s/%s"%(path,src),app_acti_p,".*\.data$")
-            try:
-                os.symlink(fpath,"%s/%s"%(app_acti_p,fname))
-            except:
-                pass
-        # mod_security was disabled for this app
-        else:
-            for rep in (custom_app_p,app_acti_p):
-                if os.path.exists(rep):
-                    for rmfile in os.listdir(rep):
-                        os.remove("%s/%s"%(rep,rmfile))
-                    os.rmdir(rep)
+        
+    if "MS_Activated" in dataPosted:
+        # create needed directories for this app
+        for rep in (path,custom_p,custom_app_p,app_acti_p):
+            if not os.path.exists(rep):
+                os.mkdir(rep,0770)
+        
+        
         # headers .. 
         headers = Header.objects.filter(app=object_id)#Delete old headers
         headers.delete()
@@ -733,7 +674,69 @@ def export_import_config (request, type):
 def edit_security (request, object_id=None):
     form = ModSecurityForm(request.POST or None,instance=object_id and ModSecConf.objects.get(id=object_id))
     if request.method == 'POST':
-        if form.is_valid():
+        print "toto"            
+            
+        # get variables we send to the template
+        #mod_secu_vars = {"appname":app.name}
+        #    for row in ('version','action',
+        #            'motor',
+        #            'critical_score','warning_score','error_score',
+        #            'notice_score','inbound_score','outbound_score',
+        #            'paranoid', 'UTF', 'XML', 'BodyAccess',
+        #            'max_num_args', 'arg_name_length', 'arg_length',
+        #            'total_arg_length', 'max_file_size','combined_file_size',
+        #            'allowed_http','allowed_content_type',
+        #            'allowed_http_version','restricted_extensions',
+        #            'restricted_headers',
+        #            'BT_activated', 'protected_urls',
+        #            'BT_burst_time_slice', 'BT_counter_threshold',
+        #            'BT_block_timeout',
+        #            'DoS_activated', 'DoS_burst_time_slice', 
+        #            'DoS_counter_threshold', 'DoS_block_timeout', 'Custom' ):
+        #        if row in request.POST:
+        #            mod_secu_vars[row]=request.POST[row]
+        #    # write config file for this app
+        #    f = open(fpath,'wb')
+        #    f.write(conf_txt)
+        #    f.close()
+        #    # create/remove symlinks for activated rules
+        #    directory = {
+        #                    "base_rules":"securitybase",
+        #                    "experimental_rules":'securityexp',
+        #                    "optional_rules":'securityopt',
+        #                    "slr_rules":'securityslr',
+        #                    "CUSTOM":'CUSTOM'
+        #               }
+        #    # create directory for app conf if needed
+        #    # remove deleted rules, add new ones
+        #    for dir_, file_list in directory.iteritems():
+        #        new_files = request.POST.getlist(file_list)
+    #   #             if not form.fields[file_list].initial:
+    #   #                 break;
+        #        for old_file in form.fields[file_list].initial:
+        #            if not old_file in new_files:
+        #                os.remove("%s/%s"%(app_acti_p,old_file))
+        #        for file_ in new_files:
+        #            try:
+        #                os.symlink("%s/%s/%s"%(path,dir_,file_),"%s/%s"%(app_acti_p,file_))
+        #            except:
+        #                pass
+        #        # link all data files in app directory
+        #    for src in directory:
+        #        link_path("%s/%s"%(path,src),app_acti_p,".*\.data$")
+        #    try:
+        #        os.symlink(fpath,"%s/%s"%(app_acti_p,fname))
+        #    except:
+        #        pass
+        # mod_security was disabled for this app
+        #else:
+        #    for rep in (custom_app_p,app_acti_p):
+        #        if os.path.exists(rep):
+        #            for rmfile in os.listdir(rep):
+        #                os.remove("%s/%s"%(rep,rmfile))
+        #            os.rmdir(rep)
+
+    if form.is_valid():
             form.save()
             return HttpResponseRedirect('/security')
     return render_to_response('vulture/modsecurity_form.html', {'form' : form, })
