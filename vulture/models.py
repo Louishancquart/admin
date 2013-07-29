@@ -39,32 +39,39 @@ import urllib2
 import tempfile
 import shutil
 
-
 class Groupe(models.Model):
     name = models.CharField(max_length = 255,blank=False,null=True)
     date = models.DateField(auto_now_add=True,editable=False)
     version = models.CharField(max_length = 255)
     
+    def delete(self,*args,**kwargs):
+        if self.is_ondisk():
+            shutil.rmtree(self.get_dir_path())
+        super(Groupe,self).delete(*args,**kwargs)
+        
     def deploy_ondisk(self):
         """put group files on disk to be used by apache"""
-        dir_path = settings.CONF_PATH+"security-rules/"+self.name+"/"
         
         #creer un dossier "gpe_version" dans security rules en utilisant settings.conf
-        if not self.is_ondisk():
-            os.makedirs(dir_path)
-            print "directory created"
+        # -vider le dossier
+        #if os.path.exists(self.get_dir_path()):
+        #    shutil.rmtree(self.get_dir_path())
+        
+        if self.is_ondisk():
+            return False
 
         #pour chaque fichier ratache au groupe dans la DB
-        for file in self.fichier_set.all():                    
-                        
-            #ajouter un include dans le fichier vulture_httpd.conf
-            
+        for file_ in self.fichier_set.all():                    
             #Deployer le fichier:
-            #creer le dossier racine du fichier    
-            #creer le fichier
-            print dir_path+file.name
-            f=open(dir_path+file.name,'w')
-            f.write(file.content.encode('utf-8'))
+            # -creer le dossier racine du fichier  
+            file_subdir = file_.get_full_dir_path()
+            if not os.path.exists(file_subdir):
+                os.makedirs(file_subdir)
+            file_path = file_.get_full_file_path()
+            print file_path
+            # -creer le fichier
+            f=open(file_path,'w')
+            f.write(file_.content.encode('utf-8'))
             f.close()
         return True
 
@@ -92,9 +99,12 @@ class Groupe(models.Model):
                     continue
                 path_file="%s/%s"%(root,each_file)
                 f=open(path_file, "rb")
-                print "path : %s"%"/".join(path_file.split("/")[3:])
                 content = f.read().decode('utf-8',errors='replace')
-                self.fichier_set.create(name=each_file,content=content,groupe=self,path_name="/".join(path_file.split("/")[3:]))
+                self.fichier_set.create(
+                    name=each_file,
+                    content=content,
+                    groupe=self,
+                    path_name="/".join(root.split("/")[3:]))
                 f.close()
         return True
 
@@ -114,9 +124,12 @@ class Groupe(models.Model):
         shutil.rmtree(destination_path)
         return True
     
+    def get_dir_path(self):
+        return "%ssecurity-rules/%s_%s"%(settings.CONF_PATH,self.name, self.version)
+
     def is_ondisk(self):
         """check if groups files of the group exists on the disk"""
-        return os.path.exists(settings.CONF_PATH+"security-rules/"+self.name)
+        return os.path.exists(self.get_dir_path())
 
     def __unicode__(self):
         return self.name
@@ -129,6 +142,12 @@ class Fichier(models.Model):
     content = models.TextField()
     path_name = models.CharField(max_length = 255)
     groupe  = models.ForeignKey(Groupe)
+
+    def get_full_dir_path(self):
+        return "%s/%s"%(self.groupe.get_dir_path(), self.path_name)
+
+    def get_full_file_path(self):
+        return "%s/%s"%(self.get_full_dir_path(), self.name)
     
     def __unicode__(self):
         return self.name
@@ -365,7 +384,7 @@ class Intf(models.Model):
     
     def has_mod_secu(self):
         return App.objects.filter(intf=self.id,
-                MS_Activated=True).count()>0
+                security__isnull=False).count()>0
     
     def has_balancer(self):
         return App.objects.filter(intf=self.id,
@@ -435,7 +454,7 @@ class Intf(models.Model):
         self.write()
         fail_msg = self.tryConf()
         if fail_msg:
-            self.restoreConf(bpath)
+            #self.restoreConf(bpath)
             return fail_msg
 
     def delete(self,*args,**kwargs):
@@ -447,6 +466,7 @@ class Intf(models.Model):
         
             
     def write(self):
+        self.deploy_all()
         f=open("%s%s.conf" % (settings.CONF_PATH, self.id), 'wb')
         f.write(str(self.conf()))
         f.close()
@@ -472,6 +492,15 @@ class Intf(models.Model):
                 f.write(str(auth.get_crt()))
                 f.close()
 
+    def deploy_all(self):
+        """ si mod_secu est active, deployer groupe et modsecuconf"""
+        for app in App.objects.filter(intf=self).all():
+            if app.security:
+                app.security.deploy()
+                if app.policy:
+                    for fp in app.policy.fichierpolitique_set.all():
+                        fp.fichier.groupe.deploy_ondisk()   
+        
     def checkIfEqual(self):
         try:
             f=open("%s%s.conf" % (settings.CONF_PATH, self.id), 'rb')
@@ -498,6 +527,14 @@ class Intf(models.Model):
 
 
     def need_restart(self):
+        apps = self.app_set.all()
+        for app in apps:
+            if app.security and not app.security.is_uptodate():
+                return True
+            if app.policy:
+                for fp in app.policy.fichierpolitique_set.all():
+                    if not fp.fichier.groupe.is_ondisk():
+                        return True
         try:
             f=open("%s%s.conf" % (settings.CONF_PATH, self.id), 'r')
             content = f.read()
@@ -558,6 +595,9 @@ class Intf(models.Model):
                         return True
                 except:
                     return True
+            # TODO: check si mod_secu est active
+            # si oui, verifier que la conf est bien en place
+
           
 # send command "cmd" to apache (using httpd.conf of interface 
     def k(self, cmd):
@@ -1085,6 +1125,7 @@ class SSO(models.Model):
     is_in_url_redirect_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
     is_in_url_redirect_options = models.CharField(max_length=128, blank=1, null=1)
     is_post = models.BooleanField(default=0)
+    
     def __unicode__(self):
         return self.name
     class Meta:
@@ -1243,7 +1284,7 @@ class App(models.Model):
     cache_max_expire = models.IntegerField(default=86400)
     cache_store_no_store = models.BooleanField(default=False)
     cache_store_private = models.BooleanField(default=False)
-    
+    policy=models.ForeignKey('Politique', blank=True, null=True) 
     
     def isWildCard (self):
         return self.alias.startswith('*')
@@ -1642,10 +1683,6 @@ class ModSecConf(models.Model):
         ('mem','mem'),
         )
     
-
-    
-    #modSecurityConf = models.ForeignKey(App)
-
     name = models.CharField(max_length=128, blank=False, null=False)
     action = models.CharField(max_length=128, choices=MS_ACTIONS, default='Log_Block')
     allowed_content_type = models.TextField(blank=1, null=1,default='application/x-www-form-urlencoded multipart/form-data text/xml application/xml application/x-amf')
@@ -1683,6 +1720,24 @@ class ModSecConf(models.Model):
     def to_file(self):
         t = get_template("mod_secu.conf")
         return t.render(Context({'conf':self}))
+    
+    def get_conf_path(self):
+        return "%ssecurity-rules/%s.conf"%(settings.CONF_PATH, self.name.replace(" ","_").lower())
+
+    def is_uptodate(self):
+        if os.path.exists(self.get_conf_path()):
+            f=open(self.get_conf_path(),"r")
+            content=f.read()
+            f.close()
+            return content == self.to_file()
+        return False
+
+    def deploy(self):
+        if not self.is_uptodate():
+            f=open(self.get_conf_path(),"w")
+            f.write(self.to_file())
+            f.close()
+        return True 
 
     def __str__(self):
         return self.name

@@ -15,17 +15,6 @@
         <form method="post" enctype="multipart/form-data" action="">
         <table>
         {{ form }}
-            {% comment %}
-            <tr>
-                <th>{% trans "File" %}</th>
-                <th>{{ form.path }}{% if form.path.errors %}<div class="error" style="background-color:red;">{{ form.path.errors|join:", " }}</div>{% endif %}</th>
-            </tr>
-            <tr>
-                <th>url</th>
-                <th>{{ form.url }}{% if form.url.errors %}<div class="error" style="background-color:red;">{{ form.url.errors|join:", " }}</div>{% endif %}</th>
-            </tr>
-            
-           {% endcomment %}
             <tr>
                 <th></th><td><input type="submit" value="Enregistrer" href="." style="text-align: center;"/></td>  
             </tr>

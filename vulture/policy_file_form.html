@@ -12,20 +12,45 @@
 {% endblock %}
 
 {% block content %}
+
+
+<script type='text/javascript'>
+    function setAllBox(formName,className,CheckValue){
+        if (!document.forms[formName])
+            return;
+            
+        var checkBoxes = document.forms[formName].elements[className];
+        if(!document.checkBoxes)
+            return;
+        
+        var checkBoxCount=checkBoxes.length;
+        
+        if(!checkBoxCount){
+            checkBoxes.checked=checkValue;
+        }else{
+            //set the checkbox for all values
+            for(var i=0;i < checkBoxCount;i++){
+                checkBoxes[i].cheked = CheckValue;
+                }
+        }
+    }
+
+</script>
     <div id="main_content_1" class="main_content">
-    <form method="post" action="">
+    <form method="post" name="form" action="">
     <table>
         {{form}}
     <tr>
-    <th colspan="2"><input type="submit" value="{% trans "Save settings" %}" /></th>
+    <th colspan="2"><input type="submit" value="{% trans "Save settings" %}" /></td>
+</th>
     </tr>
     </table>
     <table>
         {% for group in groups %}
-        <tr><th>{{group.nom}}</th><th>{% trans "Select"%}</th></tr>
+        <tr><th>{{group.nom}}</th><th><input type="checkbox" name="file_{{fichier.pk}}" onclick="setAllBox('form','g1',true)"/>{% trans "Select"%}</th></tr>
             {%for fichier in group.fichiers %}
             <tr>
-                <td>{{fichier.name}}</td><td><input type="checkbox" name="file_{{fichier.pk}}" {% if fichier.checked %} checked="checked"{%endif%}/></td>
+                <td>{{fichier.name}}</td><td><input type="checkbox" name="file_{{fichier.pk}}" class="{{group.nom}}" {% if fichier.checked %} checked="checked"{%endif%}/></td>
             </tr>
             {%endfor%}
         {% endfor %}

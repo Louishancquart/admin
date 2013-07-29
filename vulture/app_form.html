@@ -33,24 +33,6 @@
         (function($) {
             // we can now rely on $ within the safety of our “bodyguard” function
             $(document).ready( function() {
-                if ($('#id_MS_Activated').attr('checked')) {
-                    $('#mod-security').show();
-                }
-                else {
-                    $('#mod-security').hide();
-                }
-                if ($('#id_BT_activated').attr('checked')) {
-                    $('#BFP').show();
-                }
-                else {
-                    $('#BFP').hide();
-                }
-                if ($('#id_DoS_activated').attr('checked')) {
-                    $('#DoSP').show();
-                }
-                else {
-                    $('#DoSP').hide();
-                }
                 $("#addrow").click(function() {
                     nbheaders++;
                     var name = 'table.' + nbheaders;
@@ -264,8 +246,12 @@
                 </tr>
                 <tr><td></td><td></td>
                 <tr> 
-                    <td>{% trans "Choose configuration" %}</td>
+                    <td>{% trans "configuration" %}</td>
                     <td>{{ form.security }}</td>
+                </tr>
+                <tr> 
+                    <td>{% trans "policy" %}</td>
+                    <td>{{ form.policy }}</td>
                 </tr>
             </table>
         </div>
