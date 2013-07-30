@@ -68,7 +68,7 @@
                     <tr >
                         <td ><label>{% trans "ignored rule :" %}<input type="text" name="ignore_file_{{pfile.pk}}_{{forloop.counter}}" value="{{ ignorerule.rules_number }}"></label>
                         {% if ignorerule.is_strange %}
-                            <p><img src="/img/vulture2/info.png" alt="info" /> rule id non trouvée dans les fichiers en base </p>
+                            <p><img src="/img/vulture2/warning.png" alt="warning" /> rule id non trouvée dans les fichiers en base </p>
                         {% endif %}
                         </td>
                         <td style="float:right;width:16px;">

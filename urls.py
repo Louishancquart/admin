@@ -92,7 +92,7 @@ urlpatterns = patterns('',
   (r'^security/generator$',                   'vulture.views.generator'),
   (r'^security/(?P<object_id>\d+)/del/$',     'vulture.views.remove_security'),
   
-  (r'^policy/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Politique.objects.all()}, template_name='vulture/generic_list.html',extra_context = dict(category='Web Firewall', name='Policy', url='/policy'))),
+  (r'^policy/?$',                              'vulture.views.vulture_object_list_adm', dict({'queryset': Politique.objects.all()}, template_name='vulture/policy_list.html',extra_context = dict(category='Web Firewall', name='Policy', url='/policy'))),
   (r'^policy/((?P<object_id>\d+)|new)/?$', 'vulture.views.edit_policy'),
   (r'^policy/(?P<object_id>\d+)/files/?$', 'vulture.views.edit_policy_files'),
   
