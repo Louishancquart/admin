@@ -15,23 +15,14 @@
 
 
 <script type='text/javascript'>
-    function setAllBox(formName,className,CheckValue){
-        if (!document.forms[formName])
+    function setAllBox(className,CheckValue){
+        var boxes = document.getElementsByClassName("g1");
+        if(!boxes){
+            alert('no boxes');
             return;
-            
-        var checkBoxes = document.forms[formName].elements[className];
-        if(!document.checkBoxes)
-            return;
-        
-        var checkBoxCount=checkBoxes.length;
-        
-        if(!checkBoxCount){
-            checkBoxes.checked=checkValue;
-        }else{
-            //set the checkbox for all values
-            for(var i=0;i < checkBoxCount;i++){
-                checkBoxes[i].cheked = CheckValue;
-                }
+        }
+        for(var i=0;i < boxes.length;i++){
+            boxes[i].checked = CheckValue;
         }
     }
 
@@ -47,7 +38,7 @@
     </table>
     <table>
         {% for group in groups %}
-        <tr><th>{{group.nom}}</th><th><input type="checkbox" name="file_{{fichier.pk}}" onclick="setAllBox('form','g1',true)"/>{% trans "Select"%}</th></tr>
+        <tr><th>{{group.nom}}</th><th><input type="checkbox" name="file_{{fichier.pk}}" onclick="setAllBox('{{group.nom}}',this.checked)"/>{% trans "Select"%}</th></tr>
             {%for fichier in group.fichiers %}
             <tr>
                 <td>{{fichier.name}}</td><td><input type="checkbox" name="file_{{fichier.pk}}" class="{{group.nom}}" {% if fichier.checked %} checked="checked"{%endif%}/></td>
