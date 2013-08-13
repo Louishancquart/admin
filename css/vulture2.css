@@ -1,13 +1,11 @@
 body {
     background-repeat:no-repeat;
     background-position:top center;
-    /*background-color:#222222;*/
-    background-color:#636D76;
+    background-color:#222222;
+    /*background-color:#636D76;*/
     font-family:Verdana, Arial, Helvetica, sans-serif;
     font-size:10px;
 }
-/*ajouts*/
-/*ajouts*/
 
 body img {
     width:16px;
@@ -34,7 +32,7 @@ table {
 	top: 0;
 	left: 0;
 	font-size: 0.9em;
-	background-color:green /*#ffff00*/;
+	background-color:#ffff00;
     font-weight:bold;
     color: #f57e00;
     padding : 6px;
@@ -52,7 +50,7 @@ table {
 }
 
 #menu_box {
-    color:red /* #000000*/;
+    color:#000000;
     float:left;
     margin-right:4px;
 }

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load getattribute %}
+
+{% block title %}
+	{% trans category|title %} - <small>{% blocktrans with name|title as name_t %}{{ name_t }} list{% endblocktrans %}</small>
+{% endblock %}
+
+{% block tabs %}
+    <li><a href="." id="main_tab_1" class="active">{% trans "List" %}</a></li>
+{% endblock %}
+
+{% block content %}
+	<div id="main_content_1" class="main_content">
+    
+    <h2>{{file.name}}</h2>
+        <table class="CSS_Table_Example">
+            <tr>
+                <th>{% trans "Type" %}</th>
+                <th>{% trans "Variables" %}</th>
+                <th>{% trans "Operator" %}</th>
+                <th>{% trans "Actions" %}</th>
+                <th>{% trans "Id" %}</th>
+                <th>{% trans "Activated" %}</th>
+            </tr>
+            {% for rule in file.get_actions_rules_components %}
+            <tr>
+                <td>{{  rule.sec  }}</td>
+                <td>{{  rule.variables }}</td>
+                <td>{{  rule.operator }}</td>
+                <td>
+                        <ul class="rule_actions">
+                        {% for action in rule.actions %}
+                            <li>{{ action }}</li>   
+                        {% endfor %}
+                        </ul>
+                </td>
+                <td> {{ rule.id }} </td>
+                <td><input type="checkbox" checked="true"/></td>
+            </tr>
+            
+            {% endfor%}
+        </table>
+    </div>
+{% endblock %}

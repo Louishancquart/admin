@@ -14,7 +14,7 @@ from datetime import date
 import ldap
 import ldap.modlist as modlist
 import operator
-import datetime, os, time
+import os, time
 import smtplib
 import os
 import subprocess
@@ -30,11 +30,11 @@ from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 from django.contrib.auth.models import User as DjangoUser, UserManager as DjangoUserManager
+from django.db.models.signals import post_save
 from django import forms
 import base64
 import ifconfig
-import tarfile,zipfile,gzip
-from datetime import datetime,date
+import tarfile,zipfile
 import urllib2
 import tempfile
 import shutil
@@ -43,6 +43,7 @@ class Groupe(models.Model):
     name = models.CharField(max_length = 255,blank=False,null=True)
     date = models.DateField(auto_now_add=True,editable=False)
     version = models.CharField(max_length = 255)
+    url= models.URLField(null=True)
     
     def delete(self,*args,**kwargs):
         if self.is_ondisk():
@@ -68,7 +69,6 @@ class Groupe(models.Model):
             if not os.path.exists(file_subdir):
                 os.makedirs(file_subdir)
             file_path = file_.get_full_file_path()
-            print file_path
             # -creer le fichier
             f=open(file_path,'w')
             f.write(file_.content.encode('utf-8'))
@@ -132,7 +132,7 @@ class Groupe(models.Model):
         return os.path.exists(self.get_dir_path())
 
     def __unicode__(self):
-        return self.name
+        return self.name+"-"+self.version
 
     class Meta:
         db_table = 'groupe'
@@ -148,7 +148,37 @@ class Fichier(models.Model):
 
     def get_full_file_path(self):
         return "%s/%s"%(self.get_full_dir_path(), self.name)
-    
+
+    def get_rule_list(self):
+        content=self.content.replace("\\\n"," ")
+        return [d for d in filter(None,[ x.strip() for x in content.split("\n")]) if not d.startswith("#")]
+
+    def get_rule_components(self):
+        rule_list=self.get_rule_list()
+        reg = re.compile('(?P<sec>Sec[a-zA-Z]+)(\s+(?P<variables>.*?))?(\s+\"(?P<operator>.?@.*?)\")?\s+\"(?P<actions>.*?)\"\s*')
+        t=[]
+        for rule in rule_list:
+            m=reg.search(rule)
+            if m:
+                t+=[m.groupdict()]
+            else:
+                r=rule.split(" ",1)
+                t+=[{'sec':r[0],'variables':r[1],'operator':None,'actions':None}]
+        return t 
+
+    def get_actions_rules_components(self):
+        """ transform rules actions form string to array of actions"""
+        reg1 = re.compile("id\s*:\s*'?(\d+)'?")
+        t=self.get_rule_components()
+        for r in t:
+            if r['actions']:
+                r['actions']=r['actions'].split(",")
+                for action in r['actions']:
+                    m=reg1.search(action)
+                    if m:
+                        r['id']= m.group(1)    
+        return t
+
     def __unicode__(self):
         return self.name
 
@@ -157,11 +187,51 @@ class Fichier(models.Model):
 
 class Politique(models.Model):
     name = models.CharField(max_length = 255)
+    custom_rule = models.ManyToManyField('CustomRule',null=True,blank=True)
+
+    def deploy(self):
+        #deploiement du fichier de conf par politique
+        if self.is_uptodate():
+            return
+        f=open(self.get_custom_rule_path(),"w")
+        f.write(self.to_file().encode('utf-8'))
+        f.close()
+        #deploiement du groupe de conf
+        for fp in self.fichierpolitique_set.all():
+            fp.fichier.groupe.deploy_ondisk()   
+        return True 
+    
+    def to_file(self):
+        t = get_template("custom_rule.conf")
+        return t.render(Context({'policy':self}))
+    
+    def custom_rules_are_uptodate(self):
+        if self.custom_rule.all():
+            if os.path.exists(self.get_custom_rule_path()):
+                f=open(self.get_custom_rule_path(),"r")
+                content=f.read()
+                f.close()
+                if content == self.to_file():
+                    return True
+            return False
+        return True
+
+    def policy_group_is_uptodate(self):
+        for fp in self.fichierpolitique_set.all():
+            if not fp.fichier.groupe.is_ondisk():
+                return False
+        return True 
+    
+    def is_uptodate(self):
+        return self.custom_rules_are_uptodate() and self.policy_group_is_uptodate()
 
     def has_strange_ignore(self):
-        for i in self.fichierpolitique_set.all():
-            if i.has_strange_ignore():
+        for fp in self.fichierpolitique_set.all():
+            if fp.has_strange_ignore():
                 return True
+
+    def get_custom_rule_path(self):
+        return "%ssecurity-rules/%s_custom_rules.conf"%(settings.CONF_PATH, self.name.replace(" ","_").lower())
 
     def __unicode__(self):
         return self.name
@@ -199,6 +269,15 @@ class IgnoreRules(models.Model):
     class Meta:
         db_table = "ignore_rules"
 
+
+class CustomRule(models.Model):
+    name = models.CharField(max_length=128,unique=1)
+    rule = models.TextField()
+    def __unicode__(self):
+        return self.name
+    class Meta:
+        db_table = 'custom_rule'
+
 class PluginCAS(models.Model):
     auth = models.ForeignKey('Auth',null=1,blank=1)
     field = models.CharField(max_length=128,null=1,blank=1)
@@ -229,12 +308,6 @@ class VINTF(models.Model):
     class Meta:
 	db_table = 'vintf'
 	
-class ClusterVulture:
-    def __init__(self):
-        pass
-    def all_elements(self):
-        return MC.all_elements()
-
 class Log(models.Model):
     LOG_LEVELS = (
         ('emerg', 'emerg'),
@@ -454,7 +527,7 @@ class Intf(models.Model):
         self.write()
         fail_msg = self.tryConf()
         if fail_msg:
-            #self.restoreConf(bpath)
+            self.restoreConf(bpath)
             return fail_msg
 
     def delete(self,*args,**kwargs):
@@ -498,8 +571,7 @@ class Intf(models.Model):
             if app.security:
                 app.security.deploy()
                 if app.policy:
-                    for fp in app.policy.fichierpolitique_set.all():
-                        fp.fichier.groupe.deploy_ondisk()   
+                    app.policy.deploy()
         
     def checkIfEqual(self):
         try:
@@ -531,10 +603,8 @@ class Intf(models.Model):
         for app in apps:
             if app.security and not app.security.is_uptodate():
                 return True
-            if app.policy:
-                for fp in app.policy.fichierpolitique_set.all():
-                    if not fp.fichier.groupe.is_ondisk():
-                        return True
+            if app.policy and not app.policy.is_uptodate():
+                return True
         try:
             f=open("%s%s.conf" % (settings.CONF_PATH, self.id), 'r')
             content = f.read()
@@ -595,9 +665,6 @@ class Intf(models.Model):
                         return True
                 except:
                     return True
-            # TODO: check si mod_secu est active
-            # si oui, verifier que la conf est bien en place
-
           
 # send command "cmd" to apache (using httpd.conf of interface 
     def k(self, cmd):
@@ -755,7 +822,8 @@ class CAS(models.Model):
 
 class SSL(models.Model):
     SSL_REQUIRE = (
-        ('optional', 'optional'),
+        ('none', 'none'), 
+        ('optional','optional'),
         ('require', 'require'),
         )
     name = models.CharField(max_length=128,unique=1)
@@ -1079,13 +1147,6 @@ class Auth(models.Model):
     class Meta:
         db_table = 'auth'
 
-class GroupSecurity(models.Model):    
-    url = models.URLField(max_length=255)
-    def __unicode__(self):
-        return self.url
-    class Meta:
-        db_table = 'groupsecurity'
-   
 class SSO(models.Model):
     SSO_TYPES = (
         ('sso_forward_htaccess', 'sso_forward_htaccess'),
@@ -1101,7 +1162,7 @@ class SSO(models.Model):
         )
     name = models.CharField(max_length=128, unique=1)
     type = models.CharField(max_length=20, choices=SSO_TYPES, blank=1)
-    auth = models.ForeignKey('Auth', null=1)
+    auth = models.ForeignKey('Auth', null=1, blank=1)
     table_mapped = models.CharField(max_length=128, blank=1, null=1)
     base_dn_mapped = models.CharField(max_length=128, blank=1, null=1)
     user_mapped = models.CharField(max_length=128, blank=1, null=1)
@@ -1125,7 +1186,6 @@ class SSO(models.Model):
     is_in_url_redirect_action = models.CharField(max_length=128, blank=1, null=1, choices=ACTIONS, default='nothing')
     is_in_url_redirect_options = models.CharField(max_length=128, blank=1, null=1)
     is_post = models.BooleanField(default=0)
-    
     def __unicode__(self):
         return self.name
     class Meta:
@@ -1496,10 +1556,8 @@ class Plugincontent(models.Model):
     ('Header Add', 'Header Add'),
     ('Header Modify', 'Header Modify'),
     ('Header Replacement', 'Header Replacement'),
-    ('Mime Forbiden', 'Mime Forbiden'),
+    ('Mime Forbidden', 'Mime Forbidden'),
     ('Header Unset','Header Unset'),
-    ('Header to link','Header to link'),
-    ('Header to proxy','Header to proxy'),
     ('Rewrite Content','Rewrite Content'),
     ('Rewrite Link','Rewrite Link'),
     )
@@ -1743,3 +1801,25 @@ class ModSecConf(models.Model):
         return self.name
     class Meta:
         db_table = 'modsecuconf'
+
+class AdminStyle(models.Model):
+    name = models.CharField(max_length=255,null=0,blank=0)
+    style = models.TextField(blank=0,null=0)
+    class Meta:
+        db_table = 'adminstyle'
+    def __unicode__(self):
+        return self.name
+
+class UserProfile(models.Model):
+    user=models.OneToOneField(DjangoUser)
+    style=models.ForeignKey('AdminStyle', default=AdminStyle.objects.get(name='default').pk)
+    class Meta:
+        db_table = 'user_profile'
+    def __unicode__(self):
+        return self.user
+
+
+def create_user_profile(sender, instance, created, **kwargs):  
+    if created:  
+        profile, created = UserProfile.objects.get_or_create(user=instance)  
+post_save.connect(create_user_profile, sender=DjangoUser) 

@@ -8,10 +8,6 @@ import os
 import hashlib
 import ifconfig
 
-#class IgnoreRulesForm(forms.ModelForm):
-#    class Meta:
-#        model=IgnoreRules
-
 class PolicyForm(forms.ModelForm):
     class Meta:
         model=Politique
@@ -83,7 +79,7 @@ class UserProfileForm(UserCreationForm):
         user.is_superuser = self.cleaned_data['is_superuser']
         user.save()
 
-        # try
+        # try:
             # profile = user.get_profile()
         # except:
             # profile = UserProfile(user=user)
@@ -113,40 +109,13 @@ class PluginCASForm(forms.ModelForm):
         model = PluginCAS
          
 class AppForm(forms.ModelForm):
-#    def __init__(self, *args, **kwargs):
-#        super(forms.ModelForm, self).__init__(*args, **kwargs)
-#        path = settings.CONF_PATH+"security-rules/"
-#        directory = {'base_rules/': "securitybase", 'experimental_rules/': "securityexp", 'optional_rules/': "securityopt", 'slr_rules/': "securityslr", 'CUSTOM/':"CUSTOM"}
-#        
-#        if not os.path.exists(path):
-#            os.mkdir(path,0770)
-#
-#        if not os.path.exists(path+'activated/'):
-#            os.mkdir(path+'activated/',0770)
-#        
-#        for (key, fieldname) in directory.items():
-#            CHOICES=[]
-#            INITIAL={}
-#            if os.path.exists(path+key):
-#                for fileName in os.listdir(path+key):
-#                    if 'data' not in fileName and 'example' not in fileName  and os.path.isfile(path+key+fileName):
-#                        CHOICES.append((fileName,fileName))
-#                        if os.path.exists(path+'activated/'+str(self.instance).replace("/","")):
-#                            if fileName in os.listdir(path+'activated/'+str(self.instance).replace("/","")):
-#                                INITIAL[fileName] = True
-#            
-#            self.fields[fieldname].choices = CHOICES
-#            self.fields[fieldname].initial = INITIAL
-#                
-#    securitybase = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-#    securityexp = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-#    securityopt = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-#    securityslr = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-#    CUSTOM = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-#    
-    
     class Meta:
         model = App
+
+class CustomRuleForm(forms.ModelForm):
+    class Meta:
+        model = CustomRule
+
 
 class AppCopy(forms.Form):
     app = forms.ModelChoiceField(required=True, queryset=App.objects.all())
@@ -212,17 +181,12 @@ class LogicForm(forms.ModelForm):
         model = Logic
 
 class SSOForm(forms.ModelForm):
-    auth = forms.ModelChoiceField(required=True, queryset=Auth.objects.filter(auth_type__in=['sql','ldap']))
+    auth = forms.ModelChoiceField(required=False,queryset=Auth.objects.filter(auth_type__in=['sql','ldap']))
     class Meta:
         model= SSO
         
 class ModSecurityForm(forms.ModelForm):
     
-    #securitybase = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-    #securityexp = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-    #securityopt = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-    #securityslr = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
-    #CUSTOM = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
     class Meta:
         model = ModSecConf
 
@@ -234,12 +198,18 @@ class GroupSecurityForm(forms.ModelForm):
         cleaned_data = super(GroupSecurityForm, self).clean()
         path = cleaned_data.get("path")
         url = cleaned_data.get("url")
+        name = cleaned_data.get("name")
+        version = cleaned_data.get("version");
+
+        if Groupe.objects.filter(name=name, version=version):
+            raise forms.ValidationError("/!\ A group with same name and version already exists")
 
         if (not url) ^ (not path):
             # Only do something if one field is valid 
-            return cleaned_data        
-        raise forms.ValidationError("fill in valid url or valid path to validate please") 
-
+            return cleaned_data
+        else:
+            raise forms.ValidationError("/!\ fill in valid url or valid path to validate please")
+    
         # Always return the full collection of cleaned data.
     class Meta:
         model = Groupe
@@ -273,3 +243,11 @@ class JKWorkerForm(forms.ModelForm):
             queryset=JKWorker.objects.filter(is_template=True),required=False)
     class Meta:
         model = JKWorker
+
+class AdminStyleForm(forms.ModelForm):
+    class Meta:
+        model = AdminStyle
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile

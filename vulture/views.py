@@ -16,7 +16,8 @@ from time import sleep
 from django.core.exceptions import FieldError
 import ldap
 import re
-from memcached import MC
+from memcached import MC, SynchroDaemon
+import vulture.models
 from vulture.models import *
 from vulture.forms import *
 
@@ -33,9 +34,6 @@ def logon(request):
             return HttpResponseRedirect(request.POST.get('next'))
     logout(request)
     return render_to_response('logon.html', { 'next' : request.GET.get('next')})
-    user = authenticate(username='admin', password='admin')
-    login(request, user);
-    return HttpResponseRedirect('/')
 
 @permission_required('vulture.can_modsecurity')
 def update_security(request):
@@ -51,7 +49,8 @@ def manage_cluster(request):
         curversion += 1
         version_conf.value = str(curversion)
         version_conf.save()
-    return render_to_response('vulture/cluster_list.html', {'last_version':curversion, 'object_list':MC.list_servers()})
+    daemon = SynchroDaemon()
+    return render_to_response('vulture/cluster_list.html', {'last_version':curversion, 'object_list':daemon.list_servers()})
 
 @permission_required('vulture.delete_appearance')
 def remove_appearance(request,object_id=None):
@@ -200,9 +199,10 @@ def stop_intf(request, intf_id):
     intf = Intf.objects.get(pk=intf_id)
     k_output = intf.k('stop')
     apps = App.objects.filter(intf=intf).all()
+    mc = MC()
     for app in apps:
         # Delete memcached records to update config
-        MC.delete(app.name + ':app')
+        mc.delete(app.name + ':app')
     sleep(2)
     return render_to_response('vulture/intf_list.html',
                               {'object_list': Intf.objects.all(), 'k_output': k_output, 'user' : request.user})
@@ -217,9 +217,10 @@ def reload_intf(request, intf_id):
         k_output = intf.k('graceful')
     
         apps = App.objects.filter(intf=intf).all()
+        mc = MC()
         for app in apps:
             # Delete memcached records to update config
-            MC.delete("%s:app"%app.name)
+            mc.delete("%s:app"%app.name)
     return render_to_response('vulture/intf_list.html',
                               {'object_list': Intf.objects.all(), 'k_output': k_output, 'user' : request.user})
                               
@@ -227,6 +228,7 @@ def reload_intf(request, intf_id):
 def reload_all_intfs(request):
     k_output = "Reloading all interface :<br>"
     intfs = Intf.objects.all()
+    mc = MC()
     for intf in intfs :
         if intf.need_restart:
             fail = intf.maybeWrite()
@@ -242,7 +244,7 @@ def reload_all_intfs(request):
                 k_output += "<br>"
                 # Delete memcached records to update config
                 for app in App.objects.filter(intf=intf).all():
-                    MC.delete(app.name + ':app')
+                    mc.delete(app.name + ':app')
     return render_to_response('vulture/intf_list.html', {'object_list': intfs, 'k_output': k_output, 'user' : request.user})
 
 @user_passes_test(lambda u: u.is_staff)
@@ -350,7 +352,6 @@ def edit_app(request,object_id=None):
     form = AppForm(request.POST or None,instance=inst)
     form.header = Header.objects.order_by("-id").filter(app=object_id)
     FJKD = inlineformset_factory(App, JKDirective, extra=4)
-    
     # Save new/edited app
     if request.method == 'POST' and form.is_valid():
         appdirname = request.POST['name']
@@ -379,7 +380,7 @@ def edit_app(request,object_id=None):
                     instance = Header(app=app, name = desc, value = dataPosted['field_value-' + id_], type=type_)
                     instance.save()
         # delete cached version of this app in memcache
-        MC.delete('%s:app'%app.name)
+        MC().delete('%s:app'%app.name)
         # Make sure we're using logic auth there
         app.auth = get_logic_auth_for(app.auth)
         app.save()
@@ -499,7 +500,7 @@ def edit_acl(request,object_id=None):
 @login_required
 def create_user(request,object_id=None):
     form = UserProfileForm(request.POST or None,instance=object_id and User.objects.get(id=object_id))
-    # Save new/edited component/
+    # Save new/edited component
     if request.method == 'POST' and form.is_valid():
         user = form.save(commit=False)
         dataPosted = request.POST
@@ -511,12 +512,16 @@ def create_user(request,object_id=None):
 @login_required
 def edit_user(request,object_id=None):
     form = MyUserChangeForm(request.POST or None,instance=object_id and User.objects.get(id=object_id))
+    user_profile_form = UserProfileForm(request.POST or None,instance=object_id and UserProfile.objects.get(user=object_id))
+
     # Save new/edited component
     if request.method == 'POST' and form.is_valid():
         user = form.save(commit=False)
         user.save()
+        if user_profile_form.is_valid():
+            user_profile_form.save()
         return HttpResponseRedirect('/user/')
-    return render_to_response('vulture/useredit_form.html', {'form': form, 'user' : request.user, 'id' : object_id})
+    return render_to_response('vulture/useredit_form.html', {'form': form, 'user_profile': user_profile_form, 'user' : request.user, 'id' : object_id})
     
 @login_required
 def edit_user_password(request,object_id=None):    
@@ -626,35 +631,36 @@ def view_event (request, object_id=None):
     return render_to_response('vulture/event_list.html', {'file_list': file_list, 'log_content': content, 'type_list': type_list, 'type' : type_, 'records' : str(records_nb), 'length' : length, 'filter' : filter_, 'active_sessions' : active_sessions, 'user' : request.user, 'stats_month' : stats_month, 'stats_day' : stats_day, 'stats_hour' : stats_hour, 'stats_failed_month' : stats_failed_month, 'stats_failed_day' : stats_failed_day, 'stats_failed_hour' : stats_failed_hour, 'connections_failed' : connections_failed})
     
 @login_required
-def export_import_config (request, type):
-    query = request.POST
+def export_import_config (request, type_):
     content = None
     path = None
-    if 'path' in query:
-        path = query['path']
-        argsOK = True
-        if type == 'import':
-            nIN=path
-            nOUT=settings.DATABASE_PATH+"/db"
-        elif type == 'export':
-            nIN=settings.DATABASE_PATH+"/db"
-            nOUT=path
-        if os.path.exists(path):
+    if request.method == "POST": 
+        query = request.POST
+        if 'path' in query:
+            path = query['path']
+            argsOK = True
+            if type_ == 'import':
+                nIN=path
+                nOUT=settings.DATABASE_PATH+"/db"
+            elif type_ == 'export':
+                nIN=settings.DATABASE_PATH+"/db"
+                nOUT=path
+                if os.path.exists(path):
+                    argsOK = False
+        else:    
+            content = 'Invalid query'
             argsOK = False
-    else:    
-        content = 'You had not specify type'
-        argsOK = False
-    if argsOK:
-        try:
-            fIN=open(nIN,"r")
-            fOUT=open(nOUT,"w")
-            fOUT.write(fIN.read())
-            fOUT.close()
-            fIN.close()
-            content=type+" database: complete"
-        except:
-            content = type+" database: failed"
-    return render_to_response('vulture/exportimport_form.html', {'type': type, 'path': path, 'content': content})
+        if argsOK:
+            try:
+                fIN=open(nIN,"r")
+                fOUT=open(nOUT,"w")
+                fOUT.write(fIN.read())
+                fOUT.close()
+                fIN.close()
+                content=type_+" database: complete"
+            except:
+                content = type_+" database: failed"
+    return render_to_response('vulture/exportimport_form.html', {'type': type_, 'path': path, 'content': content})
     
 @login_required    
 def edit_security (request, object_id=None):
@@ -662,7 +668,7 @@ def edit_security (request, object_id=None):
     if request.method == 'POST':
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect('/security')
+            return HttpResponseRedirect('/configuration')
     return render_to_response('vulture/modsecurity_form.html', {'form' : form, })
 
 @login_required    
@@ -685,6 +691,15 @@ def edit_group(request, object_id=None):
     else:
         form = GroupSecurityForm(instance=inst )
     return render_to_response('vulture/group_form.html', {'form' : form, })
+
+@login_required    
+def edit_rule(request, object_id=None):
+    form = CustomRuleForm(request.POST or None,instance=object_id and CustomRule.objects.get(id=object_id))
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+        return HttpResponseRedirect('/customrule')
+    return render_to_response('vulture/custom_rule_form.html', {'form' : form, })
 
 def view_group(request, object_id):
     groupe = Groupe.objects.get(pk=object_id);
@@ -746,7 +761,11 @@ def edit_policy(request, object_id=None):
     return render_to_response('vulture/policy_form.html', {'form':form,'policy_files': politique and politique.fichierpolitique_set.all() })
 
 
+@login_required
 def generator (request):
+    if request.POST:
+        f.save()
+        return HttpResponseRedirect('vulture/modsecurity_generator.html', {'postedData', request.POST})
     return render_to_response('vulture/modsecurity_generator.html')
 
 @login_required
@@ -793,3 +812,38 @@ def delete_jkworker(request, object_id=None):
         f.write(jkw.genConf())
         return HttpResponseRedirect("/jk")
     return render_to_response("vulture/generic_confirm_delete.html",{"object":jkw,"category":"Web Applications","name":"Mod_JK","url":"/jk","user":request.user})
+
+@login_required
+def edit_style(request, object_id=None):
+    inst=object_id != None and AdminStyle.objects.get(pk=object_id) or None
+    if request.method == 'POST':
+        form = AdminStyleForm(request.POST,instance=inst)
+        if form.is_valid(): 
+            form.save()
+            return render_to_response('vulture/style_form.html', {'form' : form,})
+    else:
+        form = AdminStyleForm(instance=inst )
+    return render_to_response('vulture/style_form.html', {'form' : form,})
+
+def view_css(request):
+    try:
+        if request.user:
+            # TODO : fix this (use post_save instead)
+            try:
+                style = request.user.get_profile().style 
+                return HttpResponse(content=style.style, mimetype='text/css')
+            except:
+                up = UserProfile(user=request.user)
+                up.save()
+                style = up.style 
+    except:
+        style = AdminStyle.objects.get(name='default')
+    return HttpResponse(content=style.style, mimetype='text/css')
+
+@login_required
+def file_view(request,object_id=None,file_name=None):
+    policy= object_id != None and Politique.objects.get(id=object_id) or None
+    fichier=policy.fichierpolitique_set.filter(fichier__name=file_name)[0].fichier
+    #return HttpResponse(content, mimetype='text')a
+    return render_to_response('vulture/rules_view.html', {'file' : fichier,})
+
