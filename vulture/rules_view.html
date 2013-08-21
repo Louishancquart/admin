@@ -12,34 +12,83 @@
 
 {% block content %}
 	<div id="main_content_1" class="main_content">
-    
-    <h2>{{file.name}}</h2>
-        <table class="CSS_Table_Example">
+<script>
+ function show_args(el){
+    msg=el.childNodes[1];
+    btn=el.childNodes[2];
+    if (msg.className=='hide'){
+        msg.className='disp';
+       // msg.style.display="inline";
+        btn.innerHTML = " << "
+    }
+    else{
+        btn.innerHTML = " >> "
+        msg.className="hide";
+    }
+   
+}   
+
+
+function setAllBox(className,CheckValue){
+    var boxes = document.getElementsByClassName(className);
+    if(!boxes){
+        return;
+    }
+    for(var i=0;i < boxes.length;i++){
+        boxes[i].checked = CheckValue;
+    }
+}
+
+</script>
+    <h2>{{fp.fichier.name}}</h2>
+    {% if not fp.fichier.get_actions_rules_components %}
+    <div style="text-align:left;">
+    {{ fp.fichier.content|linebreaks}}
+    </div>
+    {% else%}
+    <form method="post" id="rule_view" >
+        <table>
             <tr>
+                <th>{% trans "Activated" %}</th>
+                <th>{% trans "Id" %}</th>
                 <th>{% trans "Type" %}</th>
                 <th>{% trans "Variables" %}</th>
                 <th>{% trans "Operator" %}</th>
                 <th>{% trans "Actions" %}</th>
-                <th>{% trans "Id" %}</th>
-                <th>{% trans "Activated" %}</th>
             </tr>
-            {% for rule in file.get_actions_rules_components %}
+            {% for rule in fp.fichier.get_actions_rules_components %}
             <tr>
+                <td>{% if rule.id %}
+                    <input name="ignore_rule_{{rule.id}}" type="checkbox" {% if not rule.id in fp.all_ignores %}checked="true"{% endif %}/>
+                    {% endif %}
+                </td>
+                <td>{{  rule.id   }} </td>
                 <td>{{  rule.sec  }}</td>
                 <td>{{  rule.variables }}</td>
                 <td>{{  rule.operator }}</td>
                 <td>
-                        <ul class="rule_actions">
-                        {% for action in rule.actions %}
-                            <li>{{ action }}</li>   
-                        {% endfor %}
-                        </ul>
+                    <table class="rule_actions">
+                        <tr>
+                        {% if rule.actions %}
+                            {% for action in rule.actions %}
+                                {%if action.1%}
+                                    <th onclick="show_args(this)">{{action.0}}&nbsp;<div class="hide">{{action.1}}</div><span >&nbsp;&gt;&gt;&nbsp;</span></th>
+                                {%else%}
+                                    <th title="no args">{{action.0}}</th>
+                                {%endif%}
+                            {% endfor %}
+                        {% else %}
+                            {{ rule.actions }}
+                        {% endif %}
+                        </tr>
+                    </table>
                 </td>
-                <td> {{ rule.id }} </td>
-                <td><input type="checkbox" checked="true"/></td>
+
             </tr>
-            
             {% endfor%}
         </table>
+        <input type="submit" value="{% trans "Save settings" %}"/>
+    </form>
+    {% endif %}
     </div>
 {% endblock %}
