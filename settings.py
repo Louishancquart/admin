@@ -97,7 +97,7 @@ INSTALLED_APPS = (
     'admin.vulture',
     'admin.demo_app',
 #    'django_evolution',
-    'bootstrap_toolkit',
+#    'bootstrap_toolkit',
 )
 
 AUTHENTICATION_BACKENDS = (
